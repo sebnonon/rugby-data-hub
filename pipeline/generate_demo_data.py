@@ -22,14 +22,14 @@ from supabase import create_client
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(Path(__file__).parent))
 
-load_dotenv(ROOT / ".env.demo")
+load_dotenv(ROOT / ".env")
 
-SUPABASE_URL = os.getenv("SUPABASE_URL_DEMO")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY_DEMO")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    print("❌ Credentials manquants dans .env.demo")
-    print("   Attendu : SUPABASE_URL_DEMO et SUPABASE_SERVICE_ROLE_KEY_DEMO")
+    print("❌ Credentials manquants dans .env")
+    print("   Attendu : SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY")
     sys.exit(1)
 
 client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -67,40 +67,41 @@ def delete_all() -> None:
 # ── Joueurs ────────────────────────────────────────────────────────────────────
 
 POSTES = [
-    ("MARTIN",      "Pilier gauche"),
-    ("BERNARD",     "Talonneur"),
-    ("THOMAS",      "Pilier droit"),
-    ("ROBERT",      "2ème ligne"),
-    ("RICHARD",     "2ème ligne"),
-    ("PETIT",       "3ème ligne aile"),
-    ("DURAND",      "3ème ligne aile"),
-    ("LEROY",       "3ème ligne centre"),
-    ("MOREAU",      "Pilier gauche"),
-    ("SIMON",       "Talonneur"),
-    ("LAMBERT",     "Pilier droit"),
-    ("BONNET",      "2ème ligne"),
-    ("GIRARD",      "2ème ligne"),
-    ("ANDRE",       "3ème ligne aile"),
-    ("MERCIER",     "3ème ligne centre"),
-    ("ROUSSEAU",    "Pilier gauche"),
-    ("BLANC",       "Talonneur"),
-    ("GUERIN",      "3ème ligne aile"),
+    # Avants
+    ("HARDY",          "Pilier gauche"),     # Tom Hardy
+    ("STALLONE",       "Talonneur"),         # Sylvester Stallone
+    ("SCHWARZENEGGER", "Pilier droit"),      # Arnold Schwarzenegger
+    ("DEPARDIEU",      "2ème ligne"),        # Gérard Depardieu
+    ("HEMSWORTH",      "2ème ligne"),        # Chris Hemsworth
+    ("STATHAM",        "3ème ligne aile"),   # Jason Statham
+    ("DIESEL",         "3ème ligne aile"),   # Vin Diesel
+    ("JOHNSON",        "3ème ligne centre"), # Dwayne Johnson
+    ("CLAVIER",        "Pilier gauche"),     # Christian Clavier
+    ("DUJARDIN",       "Talonneur"),         # Jean Dujardin
+    ("AUTEUIL",        "Pilier droit"),      # Daniel Auteuil
+    ("CAVILL",         "2ème ligne"),        # Henry Cavill
+    ("MAGIMEL",        "2ème ligne"),        # Benoît Magimel
+    ("PRATT",          "3ème ligne aile"),   # Chris Pratt
+    ("BALE",           "3ème ligne aile"),   # Christian Bale
+    ("ELBA",           "3ème ligne centre"), # Idris Elba
+    ("LELLOUCHE",      "Pilier gauche"),     # Gilles Lellouche
+    ("CANET",          "Talonneur"),         # Guillaume Canet
     # Arrières
-    ("DUPONT",      "Demi de mêlée"),
-    ("NTAMACK",     "Demi d'ouverture"),
-    ("RAMOS",       "Centre"),
-    ("PENAUD",      "Centre"),
-    ("RATTEZ",      "Ailier"),
-    ("MOEFANA",     "Ailier"),
-    ("FOFANA",      "Arrière"),
-    ("REGARD",      "Demi de mêlée"),
-    ("LUCU",        "Demi d'ouverture"),
-    ("BUROS",       "Centre"),
-    ("COUILLOUD",   "Ailier"),
-    ("JALIBERT",    "Arrière"),
-    ("LESGOURGUES", "Centre"),
-    ("WOKI",        "3ème ligne centre"),
-    ("TAOFIFENUA",  "2ème ligne"),
+    ("DEPP",           "Demi de mêlée"),     # Johnny Depp
+    ("PITT",           "Demi d'ouverture"),  # Brad Pitt
+    ("CLOONEY",        "Centre"),            # George Clooney
+    ("GOSLING",        "Centre"),            # Ryan Gosling
+    ("EFRON",          "Ailier"),            # Zac Efron
+    ("REYNOLDS",       "Ailier"),            # Ryan Reynolds
+    ("DAMON",          "Arrière"),           # Matt Damon
+    ("MCCONAUGHEY",    "Demi de mêlée"),     # Matthew McConaughey
+    ("DICAPRIO",       "Demi d'ouverture"),  # Leonardo DiCaprio
+    ("ATTAL",          "Centre"),            # Yvan Attal
+    ("EVANS",          "Ailier"),            # Chris Evans
+    ("KASSOVITZ",      "Ailier"),            # Mathieu Kassovitz
+    ("GARREL",         "Arrière"),           # Louis Garrel
+    ("EASTWOOD",       "Arrière"),           # Clint Eastwood
+    ("RENNER",         "Centre"),            # Jeremy Renner
 ]
 
 AVANTS_POSTES = {"Pilier gauche", "Talonneur", "Pilier droit",

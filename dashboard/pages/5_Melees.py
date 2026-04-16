@@ -151,7 +151,7 @@ with tab_equipe:
         fig = px.bar(
             df_par_match, x="label_match", y="nb_melees",
             labels={"label_match": "", "nb_melees": "Nb mêlées"},
-            color_discrete_sequence=["#ffffff"],
+            color_discrete_sequence=["#56B4E9"],
         )
         fig.update_layout(xaxis_tickangle=-35, **PLOTLY_LAYOUT)
         st.plotly_chart(fig, use_container_width=True)
@@ -161,7 +161,7 @@ with tab_equipe:
         fig2 = px.bar(
             df_par_match, x="label_match", y="impact_moy",
             labels={"label_match": "", "impact_moy": "Impact moy."},
-            color_discrete_sequence=["#aaaaaa"],
+            color_discrete_sequence=["#E69F00"],
         )
         fig2.update_layout(xaxis_tickangle=-35, **PLOTLY_LAYOUT)
         st.plotly_chart(fig2, use_container_width=True)
@@ -186,11 +186,11 @@ with tab_equipe:
     fig3 = go.Figure()
     fig3.add_trace(go.Bar(
         x=df_timeline["label"], y=df_timeline["impact_moy"],
-        name="Impact moy.", marker_color="#ffffff"
+        name="Impact moy.", marker_color="#56B4E9"
     ))
     fig3.add_trace(go.Bar(
         x=df_timeline["label"], y=df_timeline["scrum_load_moy"],
-        name="Scrum Load moy.", marker_color="#555555"
+        name="Scrum Load moy.", marker_color="#E69F00"
     ))
     fig3.update_layout(
         barmode="group", xaxis_tickangle=-35,
@@ -240,7 +240,7 @@ with tab_joueur:
             fig = px.bar(
                 df_j_match, x="label_match", y="impact_moy",
                 labels={"label_match": "", "impact_moy": "Impact moy."},
-                color_discrete_sequence=["#ffffff"],
+                color_discrete_sequence=["#56B4E9"],
             )
             fig.update_layout(xaxis_tickangle=-35, **PLOTLY_LAYOUT)
             st.plotly_chart(fig, use_container_width=True)
@@ -250,7 +250,7 @@ with tab_joueur:
             fig2 = px.bar(
                 df_j_match, x="label_match", y="scrum_load_total",
                 labels={"label_match": "", "scrum_load_total": "Scrum Load total"},
-                color_discrete_sequence=["#aaaaaa"],
+                color_discrete_sequence=["#E69F00"],
             )
             fig2.update_layout(xaxis_tickangle=-35, **PLOTLY_LAYOUT)
             st.plotly_chart(fig2, use_container_width=True)

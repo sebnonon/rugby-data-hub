@@ -43,11 +43,12 @@ PLOTLY_LAYOUT = dict(
     height=350, margin=dict(t=20),
 )
 
+# Palette Okabe-Ito — accessible daltoniens, lisible sur fond sombre
 SESSION_COLORS = {
-    "J-2":    "#ffffff",
-    "J-1":    "#aaaaaa",
-    "J+2":    "#555555",
-    "Reprise":"#888888",
+    "J-2":     "#56B4E9",  # bleu ciel
+    "J-1":     "#E69F00",  # orange
+    "J+2":     "#009E73",  # vert teal
+    "Reprise": "#CC79A7",  # rose/violet
 }
 
 # ── Chargement des données ────────────────────────────────────────────────────
@@ -174,7 +175,7 @@ with col_right:
     fig2 = px.bar(
         df_hebdo, x="Semaine", y="DSL",
         labels={"Semaine": "", "DSL": "DSL total"},
-        color_discrete_sequence=["#ffffff"],
+        color_discrete_sequence=["#56B4E9"],
     )
     fig2.update_layout(xaxis_tickangle=-45, **PLOTLY_LAYOUT)
     st.plotly_chart(fig2, use_container_width=True)

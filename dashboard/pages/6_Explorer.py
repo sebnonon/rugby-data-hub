@@ -287,7 +287,7 @@ with tab_classement:
                 x=metrique_label, y="Joueur",
                 orientation="h",
                 color=metrique_label,
-                color_continuous_scale=[[0, "#333333"], [1, "#ffffff"]],
+                color_continuous_scale=[[0, "#0072B2"], [1, "#56B4E9"]],
                 labels={"Joueur": ""},
                 text=metrique_label,
             )
@@ -388,15 +388,16 @@ with tab_comparaison:
                 df_mediane = df_poste.groupby("nom")[cols_r].mean().median()
                 label_mediane = f"Médiane {' / '.join(postes_sel)}"
 
+            # Palette Okabe-Ito — accessible daltoniens, lisible sur fond sombre
             RADAR_COLORS = [
-                "#4FC3F7",  # bleu clair
-                "#FF7043",  # orange
-                "#66BB6A",  # vert
-                "#CE93D8",  # violet
-                "#FFCA28",  # jaune
-                "#EF5350",  # rouge
-                "#26C6DA",  # cyan
-                "#D4E157",  # vert jaune
+                "#56B4E9",  # bleu ciel
+                "#E69F00",  # orange
+                "#009E73",  # vert teal
+                "#CC79A7",  # rose/magenta
+                "#F0E442",  # jaune
+                "#D55E00",  # rouge orangé
+                "#0072B2",  # bleu foncé
+                "#7FDBFF",  # bleu cyan clair
             ]
 
             fig = go.Figure()
@@ -479,7 +480,8 @@ with tab_comparaison:
                 color="nom",
                 markers=True,
                 labels={"date": "", metrique_col_c: metrique_label_c, "nom": "Joueur"},
-                color_discrete_sequence=px.colors.sequential.Greys_r[:len(joueurs_sel)],
+                color_discrete_sequence=["#56B4E9", "#E69F00", "#009E73", "#CC79A7",
+                                          "#F0E442", "#D55E00", "#0072B2", "#7FDBFF"][:len(joueurs_sel)],
             )
             fig.update_layout(
                 legend=dict(orientation="h", y=1.12, font_color="#cccccc"),
@@ -499,8 +501,8 @@ with tab_comparaison:
                 df_agg_c,
                 x="Joueur", y=metrique_label_c,
                 color="Joueur",
-                color_discrete_sequence=["#ffffff", "#cccccc", "#aaaaaa",
-                                          "#888888", "#666666", "#444444", "#333333", "#222222"],
+                color_discrete_sequence=["#56B4E9", "#E69F00", "#009E73", "#CC79A7",
+                                          "#F0E442", "#D55E00", "#0072B2", "#7FDBFF"],
                 labels={"Joueur": ""},
                 text=metrique_label_c,
             )

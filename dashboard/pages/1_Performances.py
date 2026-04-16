@@ -59,8 +59,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Palette de couleurs pour les graphiques
-COLORS = ["#ffffff", "#aaaaaa", "#555555", "#dddddd"]
+# Palette Okabe-Ito adaptée fond sombre — accessible daltoniens
+COLORS = ["#56B4E9", "#E69F00", "#009E73", "#CC79A7"]
 
 # ── Chargement des données ────────────────────────────────────────────────────
 @st.cache_data(ttl=300)
@@ -160,7 +160,7 @@ else:
             x="label_match",
             y="distance",
             labels={"label_match": "", "distance": "Distance (m)"},
-            color_discrete_sequence=["#ffffff"],
+            color_discrete_sequence=["#56B4E9"],
         )
         fig.update_layout(
             xaxis_tickangle=-35, height=350, margin=dict(t=20),
@@ -176,7 +176,7 @@ else:
             x="label_match",
             y="vitesse_max",
             labels={"label_match": "", "vitesse_max": "Vitesse max (km/h)"},
-            color_discrete_sequence=["#aaaaaa"],
+            color_discrete_sequence=["#E69F00"],
         )
         fig2.update_layout(
             xaxis_tickangle=-35, height=350, margin=dict(t=20),
@@ -192,11 +192,11 @@ else:
         fig3 = go.Figure()
         fig3.add_trace(go.Bar(
             x=df_gps["label_match"], y=df_gps["sprints"],
-            name="Sprints", marker_color="#ffffff"
+            name="Sprints", marker_color="#56B4E9"
         ))
         fig3.add_trace(go.Bar(
             x=df_gps["label_match"], y=df_gps["hsr"],
-            name="HSR (m)", marker_color="#555555"
+            name="HSR (m)", marker_color="#E69F00"
         ))
         fig3.update_layout(
             barmode="group", xaxis_tickangle=-35,
@@ -218,7 +218,7 @@ else:
                 x="label_match",
                 y="collision_load",
                 labels={"label_match": "", "collision_load": "Collision Load"},
-                color_discrete_sequence=["#dddddd"],
+                color_discrete_sequence=["#009E73"],
             )
             fig4.update_layout(
                 xaxis_tickangle=-35, height=350, margin=dict(t=20),

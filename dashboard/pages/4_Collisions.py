@@ -149,7 +149,7 @@ with col_left:
         df_par_match,
         x="label_match", y="nb_collisions",
         labels={"label_match": "", "nb_collisions": "Nb collisions"},
-        color_discrete_sequence=["#ffffff"],
+        color_discrete_sequence=["#56B4E9"],
     )
     fig.update_layout(xaxis_tickangle=-35, **PLOTLY_LAYOUT)
     st.plotly_chart(fig, use_container_width=True)
@@ -160,7 +160,7 @@ with col_right:
         df_par_match,
         x="label_match", y="collision_load_total",
         labels={"label_match": "", "collision_load_total": "Collision Load total"},
-        color_discrete_sequence=["#aaaaaa"],
+        color_discrete_sequence=["#E69F00"],
     )
     fig2.update_layout(xaxis_tickangle=-35, **PLOTLY_LAYOUT)
     st.plotly_chart(fig2, use_container_width=True)
@@ -172,7 +172,7 @@ with col_left2:
     fig3 = px.histogram(
         df, x="collision_load", nbins=30,
         labels={"collision_load": "Collision Load", "count": "Nb événements"},
-        color_discrete_sequence=["#ffffff"],
+        color_discrete_sequence=["#56B4E9"],
     )
     fig3.update_layout(**PLOTLY_LAYOUT)
     st.plotly_chart(fig3, use_container_width=True)
@@ -184,7 +184,7 @@ with col_right2:
         x="label_match", y="time_to_feet_moy",
         size="nb_collisions",
         labels={"label_match": "", "time_to_feet_moy": "Time to feet moy. (s)", "nb_collisions": "Nb collisions"},
-        color_discrete_sequence=["#dddddd"],
+        color_discrete_sequence=["#CC79A7"],
     )
     fig4.update_layout(xaxis_tickangle=-35, **PLOTLY_LAYOUT)
     st.plotly_chart(fig4, use_container_width=True)
