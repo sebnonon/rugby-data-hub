@@ -3,12 +3,12 @@
 > Pipeline ETL + dashboard d'analyse GPS pour clubs de rugby.  
 > Transforme les exports bruts STATSports en tableau de bord interactif accessible au staff technique.
 
-[![Demo](https://img.shields.io/badge/Demo-Live-00C851?logo=streamlit&logoColor=white)](https://rugby-data-app.streamlit.app/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-deployed-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io)
+[![Demo](https://img.shields.io/badge/Demo-Live-00C851?logo=fly.io&logoColor=white)](https://rugby-data-hub.fly.dev/)
+[![Fly.io](https://img.shields.io/badge/Fly.io-deployed-7C3AED?logo=flydotio&logoColor=white)](https://fly.io)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://python.org)
 
-**[👉 Voir la démo en ligne](https://rugby-data-app.streamlit.app/)**
+**[👉 Voir la démo en ligne](https://rugby-data-hub.fly.dev/)**
 
 ---
 
@@ -66,7 +66,7 @@ Upload staff → dashboard/pages/2_Import.py → parsers/ → Supabase directeme
 | Base de développement | SQLite (local) |
 | Base de production | Supabase (PostgreSQL) |
 | Dashboard | Streamlit · Plotly |
-| Déploiement | Streamlit Cloud |
+| Déploiement | Fly.io (Docker) |
 
 ### Schéma de données
 
@@ -170,7 +170,7 @@ Le pipeline local (`pipeline_rec.py`) n'impose pas cette nomenclature.
 | `STAFF_PASSWORD` | Streamlit Secrets | Mot de passe page import |
 
 En développement local : fichier `.env` à la racine.  
-En production : Streamlit Secrets (interface Streamlit Cloud).
+En production : secrets Fly.io (`fly secrets set`).
 
 ---
 
