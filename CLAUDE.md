@@ -38,7 +38,7 @@ SUPABASE_SERVICE_ROLE_KEY=...
 
 For the demo data generator, use `.env.demo` with `SUPABASE_URL_DEMO` and `SUPABASE_SERVICE_ROLE_KEY_DEMO`.
 
-In production (Streamlit Cloud), credentials are set via Streamlit Secrets. `pipeline/supabase_client.py` handles both environments automatically.
+In production (Fly.io), credentials are set via `fly secrets set`. `pipeline/supabase_client.py` handles both environments automatically.
 
 ## Architecture
 

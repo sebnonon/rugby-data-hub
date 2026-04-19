@@ -62,7 +62,7 @@ Upload staff → dashboard/pages/2_Import.py → parsers/ → Supabase directeme
 | Couche | Technologie |
 |---|---|
 | Sources | CSV STATSports (GPS, collision, mêlée) + codage vidéo |
-| Pipeline ETL | Python 3.11 · pandas |
+| Pipeline ETL | Python 3.12 · pandas |
 | Base de développement | SQLite (local) |
 | Base de production | Supabase (PostgreSQL) |
 | Dashboard | Streamlit · Plotly |
