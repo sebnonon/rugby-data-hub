@@ -2,9 +2,6 @@
 Page import données — Rugby Data Hub (staff uniquement)
 Permet d'uploader des fichiers CSV STATSports et de les injecter dans Supabase.
 """
-import sys, os; sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from auth import require_auth
-require_auth()
 
 import sys
 from pathlib import Path

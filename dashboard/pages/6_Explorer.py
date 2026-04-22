@@ -2,9 +2,6 @@
 Page Explorateur de stats — Rugby Data Hub (staff)
 Trois modes : Classement · Comparaison joueurs · Tableau libre
 """
-import sys, os; sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from auth import require_auth
-require_auth()
 
 import sys
 from pathlib import Path

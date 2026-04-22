@@ -2,9 +2,6 @@
 Dashboard entraînements — Rugby Data Hub
 Charge GPS par joueur sur la saison (toutes séances confondues).
 """
-import sys, os; sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from auth import require_auth
-require_auth()
 
 import sys
 from pathlib import Path
