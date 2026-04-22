@@ -2,6 +2,9 @@
 Dashboard collisions — Rugby Data Hub
 Analyse des événements de collision par joueur.
 """
+import sys, os; sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+from auth import require_auth
+require_auth()
 
 import sys
 from pathlib import Path

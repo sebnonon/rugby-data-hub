@@ -2,6 +2,9 @@
 Dashboard mêlées — Rugby Data Hub
 Analyse des mêlées par match (vue équipe + vue joueur avants).
 """
+import sys, os; sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+from auth import require_auth
+require_auth()
 
 import sys
 from pathlib import Path
