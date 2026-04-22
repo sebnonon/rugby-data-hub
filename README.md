@@ -3,7 +3,7 @@
 > Pipeline ETL + dashboard d'analyse GPS pour clubs de rugby.  
 > Transforme les exports bruts STATSports en tableau de bord interactif accessible au staff technique.
 
-En travaillant avec un club de rugby professionnel, j'ai réalisé que les capteurs GPS STATSports généraient chaque semaine des dizaines de fichiers CSV — et que personne ne les exploitait vraiment, faute d'outil adapté. Ce projet est né de cette frustration : construire de A à Z un pipeline de données et un dashboard utilisable directement par le staff, sans compétence technique.
+En travaillant avec un club de rugby professionnel, j'ai réalisé que les capteurs GPS STATSports généraient chaque semaine des dizaines de fichiers CSV. Il y a là une réelle difficulté à centraliser les données et à retrouver des informations dans tous ces fichiers Excel, faute d'outil adapté. Ce projet est né de cette frustration : construire de A à Z un pipeline de données et un dashboard utilisable directement par le staff. Le but n'est pas de réinventer le travail des membres du staff, mais de le faciliter.
 
 [![Demo](https://img.shields.io/badge/Demo-Live-00C851?logo=fly.io&logoColor=white)](https://rugby-data-hub.fly.dev/)
 [![Fly.io](https://img.shields.io/badge/Fly.io-deployed-7C3AED?logo=flydotio&logoColor=white)](https://fly.io)
