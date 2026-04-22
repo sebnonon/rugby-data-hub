@@ -28,7 +28,11 @@ Le staff peut importer ses fichiers directement depuis le dashboard, sans ligne 
 
 ## Dashboard — aperçu
 
-> 📸 *Screenshots à venir — démo disponible ici : [lien]*
+**[👉 Voir la démo en ligne](https://rugby-data-hub.fly.dev/)**
+
+![Performances](docs/screenshots/performances.png)
+![Explorateur](docs/screenshots/explorateur.png)
+![Collisions](docs/screenshots/collisions.png)
 
 **6 pages disponibles :**
 
@@ -39,7 +43,7 @@ Le staff peut importer ses fichiers directement depuis le dashboard, sans ligne 
 | Collisions | Nombre de contacts, charge, distribution d'intensité, time to feet |
 | Mêlées | Scrum load, impact individuel des avants, timeline par match |
 | Explorateur | Classement top N, comparaison multi-joueurs, radar métriques |
-| Import | Upload CSV staff — validation, aperçu, import en base |
+| Import | Upload CSV, validation et aperçu des données (démo) |
 
 ---
 
@@ -165,11 +169,10 @@ Le pipeline local (`pipeline_rec.py`) n'impose pas cette nomenclature.
 
 | Variable | Contexte | Description |
 |---|---|---|
-| `SUPABASE_URL` | `.env` / Secrets | URL du projet Supabase |
-| `SUPABASE_SERVICE_ROLE_KEY` | `.env` / Secrets | Clé service role Supabase |
-| `STAFF_PASSWORD` | Streamlit Secrets | Mot de passe page import |
+| `SUPABASE_URL` | `.env` / Fly secrets | URL du projet Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | `.env` / Fly secrets | Clé service role Supabase |
 
-En développement local : fichier `.env` à la racine.  
+En développement local : fichier `.env` à la racine (voir `.env.example`).  
 En production : secrets Fly.io (`fly secrets set`).
 
 ---
