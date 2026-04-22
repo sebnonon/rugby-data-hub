@@ -30,10 +30,6 @@ Le staff peut importer ses fichiers directement depuis le dashboard, sans ligne 
 
 **[👉 Voir la démo en ligne](https://rugby-data-hub.fly.dev/)**
 
-![Performances](docs/screenshots/performances.png)
-![Explorateur](docs/screenshots/explorateur.png)
-![Collisions](docs/screenshots/collisions.png)
-
 **6 pages disponibles :**
 
 | Page | Contenu |
