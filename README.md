@@ -3,6 +3,8 @@
 > Pipeline ETL + dashboard d'analyse GPS pour clubs de rugby.  
 > Transforme les exports bruts STATSports en tableau de bord interactif accessible au staff technique.
 
+En travaillant avec un club de rugby professionnel, j'ai réalisé que les capteurs GPS STATSports généraient chaque semaine des dizaines de fichiers CSV — et que personne ne les exploitait vraiment, faute d'outil adapté. Ce projet est né de cette frustration : construire de A à Z un pipeline de données et un dashboard utilisable directement par le staff, sans compétence technique.
+
 [![Demo](https://img.shields.io/badge/Demo-Live-00C851?logo=fly.io&logoColor=white)](https://rugby-data-hub.fly.dev/)
 [![Fly.io](https://img.shields.io/badge/Fly.io-deployed-7C3AED?logo=flydotio&logoColor=white)](https://fly.io)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
@@ -49,8 +51,8 @@ Le staff peut importer ses fichiers directement depuis le dashboard, sans ligne 
 
 ```
 data/raw/gps_match/*.csv          ─┐
-data/raw/gps_entrainement/*.csv    ├─→ pipeline/parsers/ → pipeline_rec.py → SQLite (dev)
-data/raw/gps_collision/*.csv       │                                        → Supabase (prod)
+data/raw/gps_entrainement/*.csv    ├─→ pipeline/parsers/ → pipeline.py → SQLite (dev)
+data/raw/gps_collision/*.csv       │                                   → Supabase (prod)
 data/raw/gps_melee/*.csv           │
 data/raw/actions_match/*.csv      ─┘
 
@@ -176,6 +178,16 @@ En production : secrets Fly.io (`fly secrets set`).
 ## Données
 
 Les fichiers CSV sources sont des exports STATSports confidentiels appartenant au club — ils ne sont pas versionnés (`data/raw/` est dans `.gitignore`).
+
+---
+
+## Ce que j'ai appris
+
+- Construire un pipeline ETL complet en Python (parsing, normalisation, résolution de clés étrangères)
+- Modélisation d'une base de données relationnelle PostgreSQL (Supabase) pour des données sportives
+- Développement d'une app multi-page avec Streamlit et Plotly
+- Conteneurisation Docker et déploiement continu sur Fly.io via GitHub Actions
+- Génération de données synthétiques réalistes pour valider un pipeline sans exposer de données réelles
 
 ---
 

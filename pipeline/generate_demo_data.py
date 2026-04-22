@@ -22,14 +22,14 @@ from supabase import create_client
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(Path(__file__).parent))
 
-load_dotenv(ROOT / ".env")
+load_dotenv(ROOT / ".env.demo")
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+SUPABASE_URL = os.getenv("SUPABASE_URL_DEMO")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY_DEMO")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    print("❌ Credentials manquants dans .env")
-    print("   Attendu : SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY")
+    print("❌ Credentials manquants dans .env.demo")
+    print("   Attendu : SUPABASE_URL_DEMO et SUPABASE_SERVICE_ROLE_KEY_DEMO")
     sys.exit(1)
 
 client = create_client(SUPABASE_URL, SUPABASE_KEY)

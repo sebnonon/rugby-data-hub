@@ -7,3 +7,5 @@ venv/
 .env.demo
 *.Zone.Identifier
 one_pager.html
+.DS_Store
+.streamlit/secrets.toml
