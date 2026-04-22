@@ -1,7 +1,7 @@
 # Rugby Data Hub — Plateforme Data GPS
 
-> Pipeline ETL + dashboard d'analyse GPS pour clubs de rugby.  
-> Transforme les exports bruts STATSports en tableau de bord interactif accessible au staff technique.
+> Pipeline ETL + dashboard d'analyse GPS et codage vidéo pour clubs de rugby.  
+> Transforme les exports bruts STATSports et les fichiers de codage vidéo en tableau de bord interactif accessible au staff technique.
 
 En travaillant avec un club de rugby professionnel, j'ai réalisé que les capteurs GPS STATSports généraient chaque semaine des dizaines de fichiers CSV. Il y a là une réelle difficulté à centraliser les données et à retrouver des informations dans tous ces fichiers Excel, faute d'outil adapté. Ce projet est né de cette frustration : construire de A à Z un pipeline de données et un dashboard utilisable directement par le staff. Le but n'est pas de réinventer le travail des membres du staff, mais de le faciliter.
 
@@ -16,15 +16,16 @@ En travaillant avec un club de rugby professionnel, j'ai réalisé que les capte
 
 ## Présentation
 
-Les clubs de rugby équipés de capteurs GPS STATSports exportent chaque semaine des fichiers CSV par joueur — distance, vitesse, sprints, collisions, mêlées. Ces données existent mais restent inutilisées, faute d'outil pour les centraliser et les visualiser.
+Les clubs de rugby équipés de capteurs GPS STATSports exportent chaque semaine des fichiers CSV par joueur — distance, vitesse, sprints, collisions, mêlées. En parallèle, les analystes vidéo produisent des fichiers de codage match (passes, plaquages, franchissements, présences en touche et mêlée). Ces deux sources de données existent mais restent cloisonnées, faute d'outil pour les croiser et les visualiser ensemble.
 
 Ce projet construit un pipeline complet de bout en bout :
 
 ```
-CSV STATSports → parsing Python → PostgreSQL (Supabase) → dashboard Streamlit
+CSV STATSports (GPS)  ─┐
+CSV codage vidéo      ─┴→ parsing Python → PostgreSQL (Supabase) → dashboard Streamlit
 ```
 
-Le staff peut importer ses fichiers directement depuis le dashboard, sans ligne de code. Les données sont disponibles immédiatement sous forme de graphiques interactifs.
+Le croisement GPS + vidéo permet par exemple de mettre en regard la charge physique d'un joueur avec son volume d'actions techniques sur le même match. Le staff peut importer ses fichiers directement depuis le dashboard, sans ligne de code.
 
 ---
 
@@ -36,7 +37,7 @@ Le staff peut importer ses fichiers directement depuis le dashboard, sans ligne 
 
 | Page | Contenu |
 |---|---|
-| Performances | Distance, vitesse max, sprints, HSR par joueur et par match |
+| Performances | Distance, vitesse max, sprints, HSR + actions vidéo (passes, plaquages…) par joueur et par match |
 | Entraînements | Charge par séance (J-2 / J-1 / J+2 / Reprise), ACWR hebdomadaire |
 | Collisions | Nombre de contacts, charge, distribution d'intensité, time to feet |
 | Mêlées | Scrum load, impact individuel des avants, timeline par match |
@@ -63,7 +64,7 @@ Upload staff → dashboard/pages/2_Import.py → parsers/ → Supabase directeme
 
 | Couche | Technologie |
 |---|---|
-| Sources | CSV STATSports (GPS, collision, mêlée) + codage vidéo |
+| Sources | CSV STATSports (GPS match, entraînement, collision, mêlée) + exports codage vidéo (actions individuelles par match) |
 | Pipeline ETL | Python 3.12 · pandas |
 | Base de développement | SQLite (local) |
 | Base de production | Supabase (PostgreSQL) |
