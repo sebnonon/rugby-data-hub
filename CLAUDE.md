@@ -26,7 +26,12 @@ python pipeline/migrate_to_supabase.py
 
 # Generate demo data (requires .env.demo)
 python pipeline/generate_demo_data.py
+
+# Explore local SQLite data ad-hoc
+python pipeline/explorer.py
 ```
+
+There are no automated tests.
 
 ## Environment variables
 
@@ -38,7 +43,7 @@ SUPABASE_SERVICE_ROLE_KEY=...
 
 For the demo data generator, use `.env.demo` with `SUPABASE_URL_DEMO` and `SUPABASE_SERVICE_ROLE_KEY_DEMO`.
 
-In production (Fly.io), credentials are set via `fly secrets set`. `pipeline/supabase_client.py` handles both environments automatically.
+In production (Fly.io), credentials are set via `fly secrets set`. `pipeline/supabase_client.py` handles both environments automatically, loading from Streamlit Secrets first, then falling back to `.env`.
 
 ## Architecture
 
@@ -69,17 +74,30 @@ Each parser handles one CSV type and returns a cleaned DataFrame ready for upser
 
 `utils.py` is central — it contains `HOME_TEAM`, team/player aliases, `assign_fk()` (joins player/match reference DataFrames), and all normalization functions (`normalize_match_name`, `normalize_date`, `normalize_session_type`, etc.).
 
+### `perf_match` dual-source upsert
+
+`perf_match` is populated by two independent parsers that upsert into the same row via the `(joueur_id, match_id)` unique constraint:
+- `gps_match.py` fills the GPS columns (`total_distance`, `max_speed`, `sprints`, etc.)
+- `actions_match.py` fills the action columns (`passes_total`, `plaquages_total`, `minutes_jouees`, etc.)
+
+A `perf_match` row can therefore have GPS data only, actions data only, or both. Always handle NULLs in both column groups when querying.
+
 ### Database schema (Supabase/PostgreSQL)
 
 Reference tables: `joueur`, `match`  
 Fact tables: `perf_match`, `perf_entrainement`, `collision`, `melee`, `touche`  
 Views: `view_match_total`, `view_charge_hebdo`, `view_collisions_par_match`
 
+Key fields:
+- `joueur.poste_principal` — only player metadata beyond name; used for position-based filtering in the dashboard
+- `perf_match.minutes_jouees` — playing time per match, essential for normalizing per-minute stats
+- `perf_entrainement.acute_chronic_ratio` — ACWR injury-risk indicator
+
 Full schema: `supabase/schema.sql`
 
 ### Dashboard (`dashboard/`)
 
-Entry point: `dashboard/app.py` — uses `st.navigation()` for multi-page routing.
+Entry point: `dashboard/app.py` — uses `st.navigation()` for multi-page routing. **New pages must be registered there.**
 
 Pages numbered by load order (not navigation index):
 - `1_Performances.py` — GPS metrics per player per match
@@ -103,7 +121,9 @@ The local pipeline (`pipeline.py`) does not enforce these conventions.
 
 ## Club configuration
 
-`pipeline/parsers/utils.py` line 11: `HOME_TEAM = "REC"` — change this to adapt the project for a different club. Also update `MATCH_ALIASES` and `TEAM_FULL_NAMES` mappings in the same file (and their duplicates in `pipeline/pipeline.py`).
+`pipeline/parsers/utils.py` line 11: `HOME_TEAM = "REC"` — change this to adapt the project for a different club. Also update `MATCH_ALIASES` and `TEAM_FULL_NAMES` in the same file.
+
+**Warning:** `MATCH_ALIASES` and `TEAM_FULL_NAMES` are duplicated verbatim in `pipeline/pipeline.py`. Both files must be updated together when changing clubs.
 
 ## Data
 
