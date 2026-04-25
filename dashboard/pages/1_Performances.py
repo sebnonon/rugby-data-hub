@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 import streamlit as st
 import pandas as pd
+import plotly.graph_objects as go
 
 sys.path.append(str(Path(__file__).parent.parent.parent / "pipeline"))
 from supabase_client import get_client
@@ -152,6 +153,33 @@ def pct_label(total, positif, decimals=0):
     return val_str
 
 
+# ── Radar — métriques disponibles ────────────────────────────────────────────
+# Ordre = ordre d'affichage sur le radar
+RADAR_LABELS: dict[str, str] = {
+    # GPS
+    "Distance":          "distance",
+    "Vitesse max":       "vitesse_max",
+    "Sprints":           "sprints",
+    "HSR":               "hsr",
+    "Charge DSL":        "dsl",
+    "Chg. collision":    "collision_load",
+    # Technique
+    "Plaquages":         "plaquages_total",
+    "Passes":            "passes_total",
+    "Porteurs":          "porteur_total",
+    "Soutiens":          "soutiens_total",
+    "Contacts":          "contacts_total",
+    "Essais":            "essais_total",
+    # Extras disponibles mais non affichés par défaut
+    "Plaqs réussies":    "plaquages_positif",
+    "Passes réussies":   "passes_positif",
+}
+
+RADAR_DEFAULTS: list[str] = [
+    "Distance", "Vitesse max", "Sprints", "HSR", "Charge DSL", "Chg. collision",
+    "Plaquages", "Passes", "Porteurs", "Soutiens", "Contacts", "Essais",
+]
+
 # Colonnes normalisables par 80 min (Vmax exclue — on prend le max saison)
 _PER_80_COLS = [
     "distance", "sprints", "hsr", "dsl", "collision_load",
@@ -187,6 +215,63 @@ def compute_moyenne(df_joueur: pd.DataFrame) -> dict:
     return result
 
 
+def render_radar(vals: dict, selected_labels: list, team_ref: pd.Series):
+    if len(selected_labels) < 3:
+        st.info("Sélectionne au moins 3 métriques pour afficher le radar.")
+        return
+
+    cols_r = [RADAR_LABELS[lbl] for lbl in selected_labels]
+    vals_norm, vals_txt = [], []
+    for col in cols_r:
+        raw = vals.get(col)
+        ref = float(team_ref.get(col, 0) or 0)
+        try:
+            if pd.isna(raw) or ref == 0:
+                vals_norm.append(0)
+                vals_txt.append("—")
+            else:
+                vals_norm.append(min(round(float(raw) / ref * 100, 1), 110))
+                vals_txt.append(f"{float(raw):.1f}")
+        except (TypeError, ValueError):
+            vals_norm.append(0)
+            vals_txt.append("—")
+
+    theta = selected_labels + [selected_labels[0]]
+    r_plot = vals_norm + [vals_norm[0]]
+    t_plot = vals_txt  + [vals_txt[0]]
+
+    fig = go.Figure(go.Scatterpolar(
+        r=r_plot, theta=theta,
+        fill="toself",
+        fillcolor="rgba(86,180,233,0.09)",
+        line=dict(color="#56B4E9", width=2.5),
+        text=t_plot,
+        hovertemplate="%{theta} : %{text}<extra></extra>",
+    ))
+    fig.update_layout(
+        polar=dict(
+            bgcolor="#161616",
+            radialaxis=dict(
+                visible=True, range=[0, 100],
+                tickvals=[25, 50, 75, 100],
+                tickfont=dict(color="#444", size=9),
+                gridcolor="#2a2a2a", linecolor="#2a2a2a",
+            ),
+            angularaxis=dict(
+                tickfont=dict(color="#cccccc", size=11),
+                gridcolor="#2a2a2a", linecolor="#333",
+            ),
+        ),
+        paper_bgcolor="#0e0e0e",
+        font_color="#cccccc",
+        height=500,
+        margin=dict(t=30, b=30, l=80, r=80),
+        showlegend=False,
+    )
+    st.plotly_chart(fig, use_container_width=True)
+    st.caption("Normalisé sur 100 — 100 = meilleure performance de l'équipe sur la saison")
+
+
 def section(label, css_class):
     st.markdown(f'<div class="section-header {css_class}">{label}</div>', unsafe_allow_html=True)
 
@@ -219,6 +304,10 @@ def render_kpis_tech(row: dict, is_moyenne: bool = False):
 
 # ── En-tête et sélecteur joueur ───────────────────────────────────────────────
 df_all = load_data()
+
+# Référence équipe pour normalisation radar (max de chaque métrique sur la saison)
+_radar_cols = [c for c in RADAR_LABELS.values() if c in df_all.columns]
+team_max = df_all[_radar_cols].max()
 
 col_logo, col_titre = st.columns([1, 6])
 with col_logo:
@@ -263,6 +352,15 @@ with tab_moy:
         render_kpis_gps(stats, is_moyenne=True)
         render_kpis_tech(stats, is_moyenne=True)
 
+        st.divider()
+        metriques_moy = st.multiselect(
+            "Métriques radar",
+            options=list(RADAR_LABELS.keys()),
+            default=RADAR_DEFAULTS,
+            key="radar_moy",
+        )
+        render_radar(stats, metriques_moy, team_max)
+
 # ══════════════════════════════════════════════════════════════════════════════
 # ONGLET 2 — MATCH
 # ══════════════════════════════════════════════════════════════════════════════
@@ -285,3 +383,12 @@ with tab_match:
 
         render_kpis_gps(row)
         render_kpis_tech(row)
+
+        st.divider()
+        metriques_match = st.multiselect(
+            "Métriques radar",
+            options=list(RADAR_LABELS.keys()),
+            default=RADAR_DEFAULTS,
+            key="radar_match",
+        )
+        render_radar(row, metriques_match, team_max)
