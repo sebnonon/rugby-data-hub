@@ -34,11 +34,11 @@ st.markdown("""
         padding: 18px 20px;
     }
     [data-testid="stMetricLabel"] {
-        color: #888;
-        font-size: 0.7rem;
+        color: #bbbbbb;
+        font-size: 0.8rem;
         text-transform: uppercase;
-        letter-spacing: 0.8px;
-        font-weight: 600;
+        letter-spacing: 0.6px;
+        font-weight: 700;
     }
     [data-testid="stMetricValue"] {
         color: #ffffff;
