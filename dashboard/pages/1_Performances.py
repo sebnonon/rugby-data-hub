@@ -343,7 +343,12 @@ with col_titre:
     st.caption("Données GPS STATSports · Nationale 1")
 
 joueurs = sorted(df_all["nom"].dropna().unique())
-joueur  = st.selectbox("Joueur", joueurs)
+
+# ── Barre de sélection unique ─────────────────────────────────────────────────
+col_joueur, col_match, col_vue = st.columns([2, 4, 2])
+
+with col_joueur:
+    joueur = st.selectbox("Joueur", joueurs)
 
 df_joueur = df_all[df_all["nom"] == joueur].dropna(subset=["date"]).copy()
 
@@ -360,20 +365,54 @@ def _make_match_label(row):
 
 
 df_joueur["label_match"] = df_joueur.apply(_make_match_label, axis=1)
+matchs_labels = df_joueur.sort_values("date", ascending=False)["label_match"].tolist()
 
-poste = df_joueur["poste"].dropna().iloc[0] if df_joueur["poste"].notna().any() else None
-if poste:
-    st.caption(f"Poste : {poste}")
+with col_match:
+    match_sel = st.selectbox(
+        "Match", matchs_labels if matchs_labels else ["—"],
+        key="match_sel", disabled=not matchs_labels,
+    )
+
+with col_vue:
+    vue = st.radio(
+        "Vue", ["🏉 Match", "📊 Moyenne"],
+        horizontal=True, label_visibility="collapsed",
+    )
 
 st.divider()
 
-# ── Onglets ───────────────────────────────────────────────────────────────────
-tab_match, tab_moy = st.tabs(["🏉  Match", "📊  Moyenne saison"])
+# ── Vue Match ─────────────────────────────────────────────────────────────────
+if vue == "🏉 Match":
+    if df_joueur.empty or not matchs_labels:
+        st.info("Aucune donnée disponible pour ce joueur.")
+    else:
+        row = df_joueur[df_joueur["label_match"] == match_sel].iloc[0].to_dict()
+        minutes = row.get("minutes_jouees")
+        try:
+            st.caption(f"{int(minutes)} min joués" if not pd.isna(minutes) else "Minutes jouées non disponibles")
+        except (TypeError, ValueError):
+            st.caption("Minutes jouées non disponibles")
 
-# ══════════════════════════════════════════════════════════════════════════════
-# ONGLET 1 — MOYENNE SAISON
-# ══════════════════════════════════════════════════════════════════════════════
-with tab_moy:
+        cg, ct = st.columns(2)
+        with cg:
+            gps_sel_match = st.multiselect(
+                "Métriques GPS", list(GPS_LABELS.keys()),
+                default=GPS_DEFAULTS, key="gps_match",
+            )
+        with ct:
+            tech_sel_match = st.multiselect(
+                "Métriques Technique", list(TECH_LABELS.keys()),
+                default=TECH_DEFAULTS, key="tech_match",
+            )
+
+        render_kpis_section(row, gps_sel_match,  "GPS",       "section-gps",  all_labels=GPS_LABELS)
+        render_kpis_section(row, tech_sel_match, "Technique", "section-tech", all_labels=TECH_LABELS)
+
+        st.divider()
+        render_radar(row, gps_sel_match + tech_sel_match, team_max)
+
+# ── Vue Moyenne ───────────────────────────────────────────────────────────────
+else:
     if df_joueur.empty:
         st.info("Aucune donnée disponible pour ce joueur.")
     else:
@@ -401,41 +440,3 @@ with tab_moy:
 
         st.divider()
         render_radar(stats, gps_sel_moy + tech_sel_moy, team_max)
-
-# ══════════════════════════════════════════════════════════════════════════════
-# ONGLET 2 — MATCH
-# ══════════════════════════════════════════════════════════════════════════════
-with tab_match:
-    if df_joueur.empty:
-        st.info("Aucune donnée disponible pour ce joueur.")
-    else:
-        matchs_labels = df_joueur.sort_values("date", ascending=False)["label_match"].tolist()
-        match_sel = st.selectbox("Match", matchs_labels, key="match_sel")
-
-        row = df_joueur[df_joueur["label_match"] == match_sel].iloc[0].to_dict()
-        minutes = row.get("minutes_jouees")
-        try:
-            if not pd.isna(minutes):
-                st.caption(f"{int(minutes)} min joués")
-            else:
-                st.caption("Minutes jouées non disponibles")
-        except (TypeError, ValueError):
-            st.caption("Minutes jouées non disponibles")
-
-        cg, ct = st.columns(2)
-        with cg:
-            gps_sel_match = st.multiselect(
-                "Métriques GPS", list(GPS_LABELS.keys()),
-                default=GPS_DEFAULTS, key="gps_match",
-            )
-        with ct:
-            tech_sel_match = st.multiselect(
-                "Métriques Technique", list(TECH_LABELS.keys()),
-                default=TECH_DEFAULTS, key="tech_match",
-            )
-
-        render_kpis_section(row, gps_sel_match,  "GPS",       "section-gps",  all_labels=GPS_LABELS)
-        render_kpis_section(row, tech_sel_match, "Technique", "section-tech", all_labels=TECH_LABELS)
-
-        st.divider()
-        render_radar(row, gps_sel_match + tech_sel_match, team_max)
