@@ -81,7 +81,7 @@ def load_data():
             "plaquages_total, plaquages_positif, "
             "porteur_total, soutiens_total, contacts_total, essais_total, "
             "minutes_jouees, "
-            "joueur(nom, poste_principal), match(date, adversaire, session_title)"
+            "joueur(nom, poste_principal), match(date, adversaire, adversaire_nom_complet, score_rec, score_adv, session_title)"
         )
         .execute()
     )
@@ -95,6 +95,9 @@ def load_data():
             "poste":             r["joueur"]["poste_principal"] if r["joueur"] else None,
             "date":              r["match"]["date"] if r["match"] else None,
             "adversaire":        r["match"]["adversaire"] if r["match"] else None,
+            "adversaire_complet": r["match"]["adversaire_nom_complet"] if r["match"] else None,
+            "score_rec":         r["match"]["score_rec"] if r["match"] else None,
+            "score_adv":         r["match"]["score_adv"] if r["match"] else None,
             "match_titre":       r["match"]["session_title"] if r["match"] else None,
             "distance":          r["total_distance"],
             "vitesse_max":       r["max_speed"],
@@ -343,9 +346,20 @@ joueurs = sorted(df_all["nom"].dropna().unique())
 joueur  = st.selectbox("Joueur", joueurs)
 
 df_joueur = df_all[df_all["nom"] == joueur].dropna(subset=["date"]).copy()
-df_joueur["label_match"] = (
-    df_joueur["date"].dt.strftime("%d/%m/%Y") + " · " + df_joueur["adversaire"].fillna("?")
-)
+
+
+def _make_match_label(row):
+    date_str = row["date"].strftime("%d/%m/%Y")
+    nom_adv = row.get("adversaire_complet") or row.get("adversaire") or "?"
+    try:
+        sr, sa = row.get("score_rec"), row.get("score_adv")
+        score_str = f" · {int(sr)}-{int(sa)}" if (pd.notna(sr) and pd.notna(sa)) else ""
+    except (TypeError, ValueError):
+        score_str = ""
+    return f"{date_str} · vs {nom_adv}{score_str}"
+
+
+df_joueur["label_match"] = df_joueur.apply(_make_match_label, axis=1)
 
 poste = df_joueur["poste"].dropna().iloc[0] if df_joueur["poste"].notna().any() else None
 if poste:

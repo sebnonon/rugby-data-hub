@@ -39,6 +39,9 @@ TEAM_FULL_NAMES = {
     "US Bressane":                    "USBPA",
 }
 
+# Inverse : abréviation → nom complet (adversaires uniquement, pas HOME_TEAM)
+ABBREV_TO_FULL_NAME = {abbrev: full for full, abbrev in TEAM_FULL_NAMES.items() if abbrev != HOME_TEAM}
+
 # Actions de codage vidéo → préfixes de colonnes perf_match
 ACTIONS_STANDARD = {
     "Passe":              "passes",

@@ -7,8 +7,8 @@ Tables cibles         : perf_match (colonnes actions), touche, match (métriques
 import re
 import pandas as pd
 from .utils import (
-    normalize_actions_match, ACTIONS_STANDARD, TEAM_FULL_NAMES,
-    zone_start_cat, zone_end_cat, PLAYER_ALIASES, assign_fk,
+    normalize_actions_match, ACTIONS_STANDARD, TEAM_FULL_NAMES, ABBREV_TO_FULL_NAME,
+    zone_start_cat, zone_end_cat, PLAYER_ALIASES, assign_fk, HOME_TEAM,
 )
 
 FILE_TYPE = "actions_match"
@@ -76,6 +76,18 @@ def parse(df_raw: pd.DataFrame,
 
     # ── Métriques collectives matchs ──────────────────────────────────────────
     df_matchs_stats = _parse_matchs_stats(df_sans_joueur)
+
+    # ── Score et nom complet adversaire ───────────────────────────────────────
+    df_score = _compute_match_scores(df_raw)
+    df_adv   = _compute_adversaire_nom(df_raw, matchs_df)
+    for extra in [df_score, df_adv]:
+        if extra.empty:
+            continue
+        extra = extra.dropna(subset=["match_id"])
+        if df_matchs_stats.empty:
+            df_matchs_stats = extra
+        else:
+            df_matchs_stats = df_matchs_stats.merge(extra, on="match_id", how="outer")
 
     return {
         "perf_match_actions": df_perf_actions,
@@ -266,3 +278,69 @@ def _parse_matchs_stats(df: pd.DataFrame) -> pd.DataFrame:
         result = result.merge(f, on="match_id", how="outer")
 
     return result
+
+
+def _compute_match_scores(df: pd.DataFrame) -> pd.DataFrame:
+    """Calcule score_rec et score_adv depuis les actions de scoring du match."""
+    if df.empty or "match_id" not in df.columns:
+        return pd.DataFrame()
+    valid = df.dropna(subset=["match_id"]).copy()
+    if valid.empty:
+        return pd.DataFrame()
+
+    result = valid[["match_id"]].drop_duplicates().copy()
+    valid["_est_rec"] = valid["team"].str.contains("Rennes", na=False)
+
+    # Essais par équipe
+    essais = valid[valid["action"] == "Essai"]
+    if not essais.empty:
+        e = essais.groupby(["match_id", "_est_rec"]).size().unstack(fill_value=0).reset_index()
+        if True in e.columns:
+            result = result.merge(e[["match_id", True]].rename(columns={True: "_e_rec"}), on="match_id", how="left")
+        if False in e.columns:
+            result = result.merge(e[["match_id", False]].rename(columns={False: "_e_adv"}), on="match_id", how="left")
+
+    # Buts (Buteur) par équipe
+    buteur = valid[valid["action"] == "Buteur"]
+    for sfx, is_rec in [("rec", True), ("adv", False)]:
+        sub = buteur[buteur["_est_rec"] == is_rec]
+        if sub.empty:
+            continue
+        b = sub.groupby("match_id").agg(**{
+            f"_t_{sfx}": ("label_1_value", lambda x: (x == "transformation_+").sum()),
+            f"_p_{sfx}": ("label_1_value", lambda x: (x == "penalite_+").sum()),
+            f"_d_{sfx}": ("label_1_value", lambda x: (x == "drop_+").sum()),
+        }).reset_index()
+        result = result.merge(b, on="match_id", how="left")
+
+    # Garantit que toutes les colonnes intermédiaires existent
+    for col in ["_e_rec", "_e_adv", "_t_rec", "_t_adv", "_p_rec", "_p_adv", "_d_rec", "_d_adv"]:
+        if col not in result.columns:
+            result[col] = 0
+    result = result.fillna(0)
+
+    result["score_rec"] = (result["_e_rec"] * 5 + result["_t_rec"] * 2 + result["_p_rec"] * 3 + result["_d_rec"] * 3).astype(int)
+    result["score_adv"] = (result["_e_adv"] * 5 + result["_t_adv"] * 2 + result["_p_adv"] * 3 + result["_d_adv"] * 3).astype(int)
+
+    drop_cols = [c for c in result.columns if c.startswith("_")]
+    return result.drop(columns=drop_cols)[["match_id", "score_rec", "score_adv"]]
+
+
+def _compute_adversaire_nom(df: pd.DataFrame, matchs_df: pd.DataFrame) -> pd.DataFrame:
+    """Résout le nom complet de l'adversaire depuis le session_title du match."""
+    if df.empty or "match_id" not in df.columns or matchs_df.empty:
+        return pd.DataFrame()
+    match_ids = df[["match_id"]].dropna(subset=["match_id"]).drop_duplicates()
+    result = match_ids.merge(matchs_df[["match_id", "session_title"]], on="match_id", how="left")
+
+    def _resolve(session_title):
+        if pd.isna(session_title):
+            return None
+        parts = str(session_title).split("-")
+        if len(parts) != 2:
+            return None
+        adv = parts[1] if parts[0] == HOME_TEAM else parts[0]
+        return ABBREV_TO_FULL_NAME.get(adv, adv)
+
+    result["adversaire_nom_complet"] = result["session_title"].apply(_resolve)
+    return result[["match_id", "adversaire_nom_complet"]]
