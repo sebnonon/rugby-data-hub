@@ -374,6 +374,7 @@ with col_match:
     )
 
 with col_vue:
+    st.markdown('<div style="height:27px"></div>', unsafe_allow_html=True)
     vue = st.radio(
         "Vue", ["🏉 Match", "📊 Moyenne"],
         horizontal=True, label_visibility="collapsed",
