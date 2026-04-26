@@ -153,32 +153,50 @@ def pct_label(total, positif, decimals=0):
     return val_str
 
 
-# ── Radar — métriques disponibles ────────────────────────────────────────────
-# Ordre = ordre d'affichage sur le radar
-RADAR_LABELS: dict[str, str] = {
-    # GPS
-    "Distance":          "distance",
-    "Vitesse max":       "vitesse_max",
-    "Sprints":           "sprints",
-    "HSR":               "hsr",
-    "Charge DSL":        "dsl",
-    "Chg. collision":    "collision_load",
-    # Technique
-    "Plaquages":         "plaquages_total",
-    "Passes":            "passes_total",
-    "Porteurs":          "porteur_total",
-    "Soutiens":          "soutiens_total",
-    "Contacts":          "contacts_total",
-    "Essais":            "essais_total",
-    # Extras disponibles mais non affichés par défaut
-    "Plaqs réussies":    "plaquages_positif",
-    "Passes réussies":   "passes_positif",
+# ── Métriques disponibles — GPS et Technique séparés ─────────────────────────
+GPS_LABELS: dict[str, str] = {
+    "Distance":       "distance",
+    "Vitesse max":    "vitesse_max",
+    "Sprints":        "sprints",
+    "HSR":            "hsr",
+    "Charge DSL":     "dsl",
+    "Chg. collision": "collision_load",
 }
 
-RADAR_DEFAULTS: list[str] = [
-    "Distance", "Vitesse max", "Sprints", "HSR", "Charge DSL", "Chg. collision",
-    "Plaquages", "Passes", "Porteurs", "Soutiens", "Contacts", "Essais",
-]
+TECH_LABELS: dict[str, str] = {
+    "Plaquages":       "plaquages_total",
+    "Passes":          "passes_total",
+    "Porteurs":        "porteur_total",
+    "Soutiens":        "soutiens_total",
+    "Contacts":        "contacts_total",
+    "Essais":          "essais_total",
+    "Plaqs réussies":  "plaquages_positif",
+    "Passes réussies": "passes_positif",
+}
+
+# Combiné pour le radar (GPS en premier, puis Tech)
+RADAR_LABELS: dict[str, str] = {**GPS_LABELS, **TECH_LABELS}
+
+GPS_DEFAULTS:  list[str] = list(GPS_LABELS.keys())
+TECH_DEFAULTS: list[str] = ["Plaquages", "Passes", "Porteurs", "Soutiens", "Contacts", "Essais"]
+
+# Métadonnées de rendu par colonne (format, unité, colonne % réussite)
+METRIC_META: dict[str, dict] = {
+    "distance":          {"label": "Distance",        "suffix": " m",    "decimals": 0},
+    "vitesse_max":       {"label": "Vitesse max",     "suffix": " km/h", "decimals": 1},
+    "sprints":           {"label": "Sprints",         "suffix": "",      "decimals": 0},
+    "hsr":               {"label": "HSR",             "suffix": " m",    "decimals": 0},
+    "dsl":               {"label": "Charge DSL",      "suffix": "",      "decimals": 1},
+    "collision_load":    {"label": "Chg. collision",  "suffix": "",      "decimals": 1},
+    "plaquages_total":   {"label": "Plaquages",       "suffix": "",      "decimals": 0, "pct_col": "plaquages_positif"},
+    "passes_total":      {"label": "Passes",          "suffix": "",      "decimals": 0, "pct_col": "passes_positif"},
+    "porteur_total":     {"label": "Porteurs",        "suffix": "",      "decimals": 0},
+    "soutiens_total":    {"label": "Soutiens",        "suffix": "",      "decimals": 0},
+    "contacts_total":    {"label": "Contacts",        "suffix": "",      "decimals": 0},
+    "essais_total":      {"label": "Essais",          "suffix": "",      "decimals": 0},
+    "plaquages_positif": {"label": "Plaqs réussies",  "suffix": "",      "decimals": 0},
+    "passes_positif":    {"label": "Passes réussies", "suffix": "",      "decimals": 0},
+}
 
 # Colonnes normalisables par 80 min (Vmax exclue — on prend le max saison)
 _PER_80_COLS = [
@@ -276,30 +294,33 @@ def section(label, css_class):
     st.markdown(f'<div class="section-header {css_class}">{label}</div>', unsafe_allow_html=True)
 
 
-def render_kpis_gps(row: dict, is_moyenne: bool = False):
-    d = 1 if is_moyenne else 0
-    section("GPS", "section-gps")
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Distance",    fmt(row.get("distance"), suffix=" m"))
-    c2.metric("Vitesse max", fmt(row.get("vitesse_max"), decimals=1, suffix=" km/h"))
-    c3.metric("Sprints",     fmt(row.get("sprints"), decimals=d))
-    c4, c5, c6 = st.columns(3)
-    c4.metric("HSR",              fmt(row.get("hsr"), decimals=d, suffix=" m"))
-    c5.metric("Charge DSL",       fmt(row.get("dsl"), decimals=1))
-    c6.metric("Charge collision", fmt(row.get("collision_load"), decimals=1))
-
-
-def render_kpis_tech(row: dict, is_moyenne: bool = False):
-    d = 1 if is_moyenne else 0
-    section("Technique", "section-tech")
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Plaquages", pct_label(row.get("plaquages_total"), row.get("plaquages_positif"), decimals=d))
-    c2.metric("Passes",    pct_label(row.get("passes_total"),    row.get("passes_positif"),    decimals=d))
-    c3.metric("Porteurs",  fmt(row.get("porteur_total"),  decimals=d))
-    c4, c5, c6 = st.columns(3)
-    c4.metric("Soutiens",  fmt(row.get("soutiens_total"), decimals=d))
-    c5.metric("Contacts",  fmt(row.get("contacts_total"), decimals=d))
-    c6.metric("Essais",    fmt(row.get("essais_total"),   decimals=d))
+def render_kpis_section(
+    row: dict,
+    selected_labels: list[str],
+    section_label: str,
+    css_class: str,
+    is_moyenne: bool = False,
+    all_labels: dict[str, str] = RADAR_LABELS,
+):
+    """Affiche les cartes KPI pour les métriques sélectionnées, 3 par ligne."""
+    section(section_label, css_class)
+    if not selected_labels:
+        st.caption("Aucune métrique sélectionnée.")
+        return
+    for i in range(0, len(selected_labels), 3):
+        chunk = selected_labels[i:i+3]
+        cols = st.columns(3)
+        for j, lbl in enumerate(chunk):
+            col_name = all_labels.get(lbl)
+            if col_name is None:
+                continue
+            meta = METRIC_META.get(col_name, {"label": lbl, "suffix": "", "decimals": 0})
+            d = 1 if is_moyenne else meta.get("decimals", 0)
+            if "pct_col" in meta:
+                value = pct_label(row.get(col_name), row.get(meta["pct_col"]), decimals=d)
+            else:
+                value = fmt(row.get(col_name), decimals=d, suffix=meta.get("suffix", ""))
+            cols[j].metric(meta["label"], value)
 
 
 # ── En-tête et sélecteur joueur ───────────────────────────────────────────────
@@ -349,17 +370,23 @@ with tab_moy:
         else:
             st.caption(f"Moyennes brutes · {n} match{'s' if n > 1 else ''} (minutes jouées non disponibles)")
 
-        render_kpis_gps(stats, is_moyenne=True)
-        render_kpis_tech(stats, is_moyenne=True)
+        cg, ct = st.columns(2)
+        with cg:
+            gps_sel_moy = st.multiselect(
+                "Métriques GPS", list(GPS_LABELS.keys()),
+                default=GPS_DEFAULTS, key="gps_moy",
+            )
+        with ct:
+            tech_sel_moy = st.multiselect(
+                "Métriques Technique", list(TECH_LABELS.keys()),
+                default=TECH_DEFAULTS, key="tech_moy",
+            )
+
+        render_kpis_section(stats, gps_sel_moy,  "GPS",       "section-gps",  is_moyenne=True, all_labels=GPS_LABELS)
+        render_kpis_section(stats, tech_sel_moy, "Technique", "section-tech", is_moyenne=True, all_labels=TECH_LABELS)
 
         st.divider()
-        metriques_moy = st.multiselect(
-            "Métriques radar",
-            options=list(RADAR_LABELS.keys()),
-            default=RADAR_DEFAULTS,
-            key="radar_moy",
-        )
-        render_radar(stats, metriques_moy, team_max)
+        render_radar(stats, gps_sel_moy + tech_sel_moy, team_max)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # ONGLET 2 — MATCH
@@ -381,14 +408,20 @@ with tab_match:
         except (TypeError, ValueError):
             st.caption("Minutes jouées non disponibles")
 
-        render_kpis_gps(row)
-        render_kpis_tech(row)
+        cg, ct = st.columns(2)
+        with cg:
+            gps_sel_match = st.multiselect(
+                "Métriques GPS", list(GPS_LABELS.keys()),
+                default=GPS_DEFAULTS, key="gps_match",
+            )
+        with ct:
+            tech_sel_match = st.multiselect(
+                "Métriques Technique", list(TECH_LABELS.keys()),
+                default=TECH_DEFAULTS, key="tech_match",
+            )
+
+        render_kpis_section(row, gps_sel_match,  "GPS",       "section-gps",  all_labels=GPS_LABELS)
+        render_kpis_section(row, tech_sel_match, "Technique", "section-tech", all_labels=TECH_LABELS)
 
         st.divider()
-        metriques_match = st.multiselect(
-            "Métriques radar",
-            options=list(RADAR_LABELS.keys()),
-            default=RADAR_DEFAULTS,
-            key="radar_match",
-        )
-        render_radar(row, metriques_match, team_max)
+        render_radar(row, gps_sel_match + tech_sel_match, team_max)
