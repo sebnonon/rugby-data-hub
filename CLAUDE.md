@@ -69,10 +69,10 @@ Each parser handles one CSV type and returns a cleaned DataFrame ready for upser
 | `gps_entrainement.py` | GPS training CSVs → `perf_entrainement` |
 | `gps_collision.py` | Collision CSVs → `collision` |
 | `gps_melee.py` | Scrum CSVs → `melee` |
-| `actions_match.py` | Video coding CSVs → `perf_match` + `touche` + `match` |
+| `actions_match.py` | Video coding CSVs → `perf_match` + `touche` + `match` (including `score_rec`, `score_adv`, `adversaire_nom_complet`) |
 | `utils.py` | Shared helpers (normalization, FK resolution) |
 
-`utils.py` is central — it contains `HOME_TEAM`, team/player aliases, `assign_fk()` (joins player/match reference DataFrames), and all normalization functions (`normalize_match_name`, `normalize_date`, `normalize_session_type`, etc.).
+`utils.py` is central — it contains `HOME_TEAM`, team/player aliases, `assign_fk()` (joins player/match reference DataFrames), and all normalization functions (`normalize_match_name`, `normalize_date`, `normalize_session_type`, etc.). `ABBREV_TO_FULL_NAME` is the inverse of `TEAM_FULL_NAMES` (abbreviation → full name) and is derived automatically — no separate maintenance needed.
 
 ### `perf_match` dual-source upsert
 
@@ -92,6 +92,8 @@ Key fields:
 - `joueur.poste_principal` — only player metadata beyond name; used for position-based filtering in the dashboard
 - `perf_match.minutes_jouees` — playing time per match, essential for normalizing per-minute stats
 - `perf_entrainement.acute_chronic_ratio` — ACWR injury-risk indicator
+- `match.score_rec` / `match.score_adv` — match scores computed from video coding actions (essai=5, transfo=2, pénalité=3, drop=3)
+- `match.adversaire_nom_complet` — full opponent name derived from `ABBREV_TO_FULL_NAME`
 
 Full schema: `supabase/schema.sql`
 
