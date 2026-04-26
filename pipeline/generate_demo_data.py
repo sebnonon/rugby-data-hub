@@ -22,6 +22,8 @@ from supabase import create_client
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(Path(__file__).parent))
 
+from parsers.utils import ABBREV_TO_FULL_NAME
+
 load_dotenv(ROOT / ".env.demo")
 
 SUPABASE_URL = os.getenv("SUPABASE_URL_DEMO")
@@ -109,6 +111,17 @@ AVANTS_POSTES = {"Pilier gauche", "Talonneur", "Pilier droit",
 
 joueurs_data = [{"nom": nom, "poste_principal": poste} for nom, poste in POSTES]
 
+def gen_score() -> tuple[int, int]:
+    """Génère un score réaliste pour REC et l'adversaire."""
+    essais_r = rnd_int(1, 5);  essais_a = rnd_int(0, 4)
+    pen_r    = rnd_int(0, 4);  pen_a    = rnd_int(0, 4)
+    transfo_r = rnd_int(0, essais_r); transfo_a = rnd_int(0, essais_a)
+    drop_r   = 1 if random.random() < 0.15 else 0
+    drop_a   = 1 if random.random() < 0.15 else 0
+    return (essais_r*5 + transfo_r*2 + pen_r*3 + drop_r*3,
+            essais_a*5 + transfo_a*2 + pen_a*3 + drop_a*3)
+
+
 # ── Matchs ─────────────────────────────────────────────────────────────────────
 
 ADVERSAIRES = [
@@ -129,14 +142,18 @@ def gen_matchs() -> list[dict]:
         eq_dom = "REC" if domicile else adv
         eq_ext = adv if domicile else "REC"
         poss = rnd_int(42, 58)
+        sr, sa = gen_score()
         records.append({
-            "match_id":             i + 1,
-            "session_title":        f"{eq_dom}-{eq_ext}",
-            "date":                 d.isoformat(),
-            "equipe_dom":           eq_dom,
-            "equipe_ext":           eq_ext,
-            "adversaire":           adv,
-            "competition":          "Nationale 1",
+            "match_id":               i + 1,
+            "session_title":          f"{eq_dom}-{eq_ext}",
+            "date":                   d.isoformat(),
+            "equipe_dom":             eq_dom,
+            "equipe_ext":             eq_ext,
+            "adversaire":             adv,
+            "adversaire_nom_complet": ABBREV_TO_FULL_NAME.get(adv, adv),
+            "score_rec":              sr,
+            "score_adv":              sa,
+            "competition":            "Nationale 1",
             "melee_total_rec":      rnd_int(8, 16),
             "melee_positif_rec":    rnd_int(4, 9),
             "melee_negatif_rec":    rnd_int(0, 3),
