@@ -368,7 +368,7 @@ if poste:
 st.divider()
 
 # ── Onglets ───────────────────────────────────────────────────────────────────
-tab_moy, tab_match = st.tabs(["📊  Moyenne saison", "🏉  Match"])
+tab_match, tab_moy = st.tabs(["🏉  Match", "📊  Moyenne saison"])
 
 # ══════════════════════════════════════════════════════════════════════════════
 # ONGLET 1 — MOYENNE SAISON
