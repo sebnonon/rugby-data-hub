@@ -15,7 +15,7 @@ from supabase_client import get_client
 
 # ── Config page ───────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Rugby Data Hub — Performances",
+    page_title="Performances joueur",
     page_icon=Image.open(Path(__file__).parent.parent / "logo.jpg") if (Path(__file__).parent.parent / "logo.jpg").exists() else "🏉",
     layout="wide",
 )
@@ -341,7 +341,7 @@ with col_logo:
     if logo_path.exists():
         st.image(str(logo_path), width=80)
 with col_titre:
-    st.title("Rugby Data Hub — Performances")
+    st.title("Performances joueur")
     st.caption("Données GPS STATSports · Nationale 1")
 
 joueurs = sorted(df_all["nom"].dropna().unique())
