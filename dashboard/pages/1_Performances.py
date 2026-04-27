@@ -83,7 +83,7 @@ def load_data():
             "plaquages_total, plaquages_positif, "
             "porteur_total, soutiens_total, contacts_total, essais_total, "
             "minutes_jouees, "
-            "joueur(nom, poste_principal), match(date, adversaire, adversaire_nom_complet, score_rec, score_adv, session_title)"
+            "joueur(nom, poste_principal), match(date, adversaire, adversaire_nom_complet, score_rec, score_adv, journee, session_title)"
         )
         .execute()
     )
@@ -100,6 +100,7 @@ def load_data():
             "adversaire_complet": r["match"]["adversaire_nom_complet"] if r["match"] else None,
             "score_rec":         r["match"]["score_rec"] if r["match"] else None,
             "score_adv":         r["match"]["score_adv"] if r["match"] else None,
+            "journee":           r["match"]["journee"] if r["match"] else None,
             "match_titre":       r["match"]["session_title"] if r["match"] else None,
             "distance":          r["total_distance"],
             "vitesse_max":       r["max_speed"],
@@ -335,19 +336,19 @@ df_all = load_data()
 _radar_cols = [c for c in RADAR_LABELS.values() if c in df_all.columns]
 team_max = df_all[_radar_cols].max()
 
-col_logo, col_titre = st.columns([1, 12], gap="small")
+joueurs = sorted(df_all["nom"].dropna().unique())
+
+col_logo, col_titre, col_joueur, col_match, col_vue = st.columns([1, 3, 2, 4, 2], gap="small")
+
 with col_logo:
     logo_path = Path(__file__).parent.parent / "logo.jpg"
     if logo_path.exists():
-        st.markdown('<div style="margin-top: 32px"></div>', unsafe_allow_html=True)
+        st.markdown('<div style="margin-top: 20px"></div>', unsafe_allow_html=True)
         st.image(str(logo_path), width=80)
+
 with col_titre:
-    st.title("Performances joueur")
-
-joueurs = sorted(df_all["nom"].dropna().unique())
-
-# ── Barre de sélection unique ─────────────────────────────────────────────────
-col_joueur, col_match, col_vue = st.columns([2, 4, 2])
+    st.markdown('<div style="margin-top: 22px"></div>', unsafe_allow_html=True)
+    st.markdown("## Performances joueur")
 
 with col_joueur:
     joueur = st.selectbox("Joueur", joueurs)
@@ -356,14 +357,9 @@ df_joueur = df_all[df_all["nom"] == joueur].dropna(subset=["date"]).copy()
 
 
 def _make_match_label(row):
-    date_str = row["date"].strftime("%d/%m/%Y")
+    date_str = row["date"].strftime("%d/%m/%y")
     nom_adv = row.get("adversaire_complet") or row.get("adversaire") or "?"
-    try:
-        sr, sa = row.get("score_rec"), row.get("score_adv")
-        score_str = f" · {int(sr)}-{int(sa)}" if (pd.notna(sr) and pd.notna(sa)) else ""
-    except (TypeError, ValueError):
-        score_str = ""
-    return f"{date_str} · vs {nom_adv}{score_str}"
+    return f"{nom_adv} · {date_str}"
 
 
 df_joueur["label_match"] = df_joueur.apply(_make_match_label, axis=1)
@@ -384,17 +380,37 @@ with col_vue:
 
 st.divider()
 
+# ── Encadrés info match ───────────────────────────────────────────────────────
+if not df_joueur.empty and matchs_labels:
+    _row_info = df_joueur[df_joueur["label_match"] == match_sel].iloc[0]
+    _c1, _c2, _c3, _spacer = st.columns([1, 1, 1, 6])
+    sr, sa = _row_info.get("score_rec"), _row_info.get("score_adv")
+    try:
+        _score = f"{int(sr)} — {int(sa)}" if (pd.notna(sr) and pd.notna(sa)) else "—"
+    except (TypeError, ValueError):
+        _score = "—"
+    _journee = _row_info.get("journee")
+    try:
+        _journee_str = f"J{int(_journee)}" if pd.notna(_journee) else "—"
+    except (TypeError, ValueError):
+        _journee_str = "—"
+    _minutes = _row_info.get("minutes_jouees")
+    try:
+        _min_str = f"{int(_minutes)} min" if pd.notna(_minutes) else "—"
+    except (TypeError, ValueError):
+        _min_str = "—"
+    _c1.metric("Score", _score)
+    _c2.metric("Journée", _journee_str)
+    _c3.metric("Temps de jeu", _min_str)
+
+st.divider()
+
 # ── Vue Match ─────────────────────────────────────────────────────────────────
 if vue == "🏉 Match":
     if df_joueur.empty or not matchs_labels:
         st.info("Aucune donnée disponible pour ce joueur.")
     else:
         row = df_joueur[df_joueur["label_match"] == match_sel].iloc[0].to_dict()
-        minutes = row.get("minutes_jouees")
-        try:
-            st.caption(f"{int(minutes)} min joués" if not pd.isna(minutes) else "Minutes jouées non disponibles")
-        except (TypeError, ValueError):
-            st.caption("Minutes jouées non disponibles")
 
         cg, ct = st.columns(2)
         with cg:

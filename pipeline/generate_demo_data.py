@@ -153,6 +153,7 @@ def gen_matchs() -> list[dict]:
             "adversaire_nom_complet": ABBREV_TO_FULL_NAME.get(adv, adv),
             "score_rec":              sr,
             "score_adv":              sa,
+            "journee":                i + 1,
             "competition":            "Nationale 1",
             "melee_total_rec":      rnd_int(8, 16),
             "melee_positif_rec":    rnd_int(4, 9),

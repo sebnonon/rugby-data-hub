@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS match (
     adversaire_nom_complet  TEXT,
     score_rec               INTEGER,
     score_adv               INTEGER,
+    journee                 INTEGER,
     competition             TEXT,
     melee_total_rec         INTEGER,
     melee_positif_rec       INTEGER,
