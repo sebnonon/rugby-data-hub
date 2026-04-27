@@ -381,7 +381,7 @@ with col_vue:
 # ── Encadrés info match ───────────────────────────────────────────────────────
 if not df_joueur.empty and matchs_labels and vue == "🏉 Match":
     _row_info = df_joueur[df_joueur["label_match"] == match_sel].iloc[0]
-    _c1, _c2, _c3, _spacer = st.columns([1, 1, 1, 6])
+    _spacer, _c1, _c2, _c3 = st.columns([6, 1, 1, 1])
     sr, sa = _row_info.get("score_rec"), _row_info.get("score_adv")
     try:
         _score = f"{int(sr)} — {int(sa)}" if (pd.notna(sr) and pd.notna(sa)) else "—"
