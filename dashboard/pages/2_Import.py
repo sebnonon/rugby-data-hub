@@ -16,12 +16,12 @@ st.set_page_config(page_title="Rugby Data Hub — Import", page_icon=Image.open(
 
 st.markdown("""
 <style>
-    .stApp { background-color: #071626; color: #e0f0ff; }
-    [data-testid="stSidebar"] { background-color: #0d2240; }
-    h1, h2, h3 { color: #e0e0e0; }
-    [data-testid="stTextInput"] input { background-color: #0d2240; color: #e0f0ff; }
-    [data-testid="stSelectbox"] label { color: #7ab8d8; }
-    hr { border-color: #1a3a5c; }
+    .stApp { background-color: #f0f6fb; color: #071626; }
+    [data-testid="stSidebar"] { background-color: #ffffff; }
+    h1, h2, h3 { color: #1a3a5c; }
+    [data-testid="stTextInput"] input { background-color: #ffffff; color: #071626; }
+    [data-testid="stSelectbox"] label { color: #2a6080; }
+    hr { border-color: #c0d8ea; }
     .stAlert { border-radius: 8px; }
 </style>
 """, unsafe_allow_html=True)

@@ -22,27 +22,27 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    .stApp { background-color: #071626; color: #e0f0ff; }
-    [data-testid="stSidebar"] { background-color: #0d2240; }
-    h1 { color: #e0f0ff; font-weight: 800; letter-spacing: 1px; }
-    h2, h3 { color: #c0d8f0; }
+    .stApp { background-color: #f0f6fb; color: #071626; }
+    [data-testid="stSidebar"] { background-color: #ffffff; }
+    h1 { color: #071626; font-weight: 800; letter-spacing: 1px; }
+    h2, h3 { color: #1a3a5c; }
 
     /* Cartes KPI */
     [data-testid="stMetric"] {
-        background-color: #0d2240;
-        border: 1px solid #1a3a5c;
+        background-color: #ffffff;
+        border: 1px solid #c0d8ea;
         border-radius: 10px;
         padding: 18px 20px;
     }
     [data-testid="stMetricLabel"] {
-        color: #7ab8d8;
+        color: #2a6080;
         font-size: 0.8rem;
         text-transform: uppercase;
         letter-spacing: 0.6px;
         font-weight: 700;
     }
     [data-testid="stMetricValue"] {
-        color: #e0f0ff;
+        color: #071626;
         font-weight: 800;
         font-size: 1.65rem !important;
         white-space: nowrap;
@@ -58,13 +58,13 @@ st.markdown("""
         margin: 20px 0 10px 0;
         border-radius: 4px;
     }
-    .section-gps  { color: #4da8d8; border-left: 3px solid #4da8d8; background: #4da8d810; }
+    .section-gps  { color: #0a7ab0; border-left: 3px solid #0a7ab0; background: #0a7ab012; }
     .section-tech { color: #E69F00; border-left: 3px solid #E69F00; background: #E69F0010; }
 
-    [data-testid="stSelectbox"] label { color: #7ab8d8; }
-    hr { border-color: #1a3a5c; }
-    .stCaption { color: #4a7a9b; }
-    [data-testid="stDataFrame"] { border: 1px solid #1a3a5c; border-radius: 8px; }
+    [data-testid="stSelectbox"] label { color: #2a6080; }
+    hr { border-color: #c0d8ea; }
+    .stCaption { color: #5a8aaa; }
+    [data-testid="stDataFrame"] { border: 1px solid #c0d8ea; border-radius: 8px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -265,27 +265,27 @@ def render_radar(vals: dict, selected_labels: list, team_ref: pd.Series):
     fig = go.Figure(go.Scatterpolar(
         r=r_plot, theta=theta,
         fill="toself",
-        fillcolor="rgba(77,168,216,0.09)",
-        line=dict(color="#4da8d8", width=2.5),
+        fillcolor="rgba(10,122,176,0.10)",
+        line=dict(color="#0a7ab0", width=2.5),
         text=t_plot,
         hovertemplate="%{theta} : %{text}<extra></extra>",
     ))
     fig.update_layout(
         polar=dict(
-            bgcolor="#0d2240",
+            bgcolor="#ffffff",
             radialaxis=dict(
                 visible=True, range=[0, 100],
                 tickvals=[25, 50, 75, 100],
-                tickfont=dict(color="#1e4a6a", size=9),
-                gridcolor="#1a3a5c", linecolor="#1a3a5c",
+                tickfont=dict(color="#8ab4c8", size=9),
+                gridcolor="#c0d8ea", linecolor="#c0d8ea",
             ),
             angularaxis=dict(
                 tickfont=dict(color="#cccccc", size=11),
-                gridcolor="#1a3a5c", linecolor="#333",
+                gridcolor="#c0d8ea", linecolor="#333",
             ),
         ),
-        paper_bgcolor="#071626",
-        font_color="#c0d8f0",
+        paper_bgcolor="#f0f6fb",
+        font_color="#1a3a5c",
         height=500,
         margin=dict(t=30, b=30, l=80, r=80),
         showlegend=False,

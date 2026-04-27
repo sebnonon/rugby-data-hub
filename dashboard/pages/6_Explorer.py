@@ -20,29 +20,29 @@ st.set_page_config(page_title="Rugby Data Hub — Explorateur", page_icon=Image.
 
 st.markdown("""
 <style>
-    .stApp { background-color: #071626; color: #e0f0ff; }
-    [data-testid="stSidebar"] { background-color: #0d2240; }
+    .stApp { background-color: #f0f6fb; color: #071626; }
+    [data-testid="stSidebar"] { background-color: #ffffff; }
     h1 { color: #ffffff; font-weight: 800; letter-spacing: 1px; }
-    h2, h3 { color: #e0e0e0; }
+    h2, h3 { color: #1a3a5c; }
     [data-testid="stMetric"] {
-        background-color: #0d2240; border: 1px solid #1a3a5c;
+        background-color: #ffffff; border: 1px solid #c0d8ea;
         border-radius: 8px; padding: 12px 16px;
     }
-    [data-testid="stMetricLabel"] { color: #7ab8d8; font-size: 0.8rem; }
+    [data-testid="stMetricLabel"] { color: #2a6080; font-size: 0.8rem; }
     [data-testid="stMetricValue"] { color: #ffffff; font-weight: 700; }
     [data-testid="stSelectbox"] label,
-    [data-testid="stMultiSelect"] label { color: #7ab8d8; }
-    hr { border-color: #1a3a5c; }
-    [data-testid="stExpander"] { background-color: #0d2240; border: 1px solid #1a3a5c; border-radius: 8px; }
-    .stCaption { color: #4a7a9b; }
-    [data-testid="stDataFrame"] { border: 1px solid #1a3a5c; border-radius: 8px; }
+    [data-testid="stMultiSelect"] label { color: #2a6080; }
+    hr { border-color: #c0d8ea; }
+    [data-testid="stExpander"] { background-color: #ffffff; border: 1px solid #c0d8ea; border-radius: 8px; }
+    .stCaption { color: #5a8aaa; }
+    [data-testid="stDataFrame"] { border: 1px solid #c0d8ea; border-radius: 8px; }
 </style>
 """, unsafe_allow_html=True)
 
 PLOTLY_LAYOUT = dict(
-    paper_bgcolor="#0d2240", plot_bgcolor="#0d2240",
-    font_color="#c0d8f0",
-    xaxis=dict(gridcolor="#1a3a5c"), yaxis=dict(gridcolor="#1a3a5c"),
+    paper_bgcolor="#ffffff", plot_bgcolor="#ffffff",
+    font_color="#1a3a5c",
+    xaxis=dict(gridcolor="#c0d8ea"), yaxis=dict(gridcolor="#c0d8ea"),
     margin=dict(t=20),
 )
 
@@ -439,7 +439,7 @@ with tab_comparaison:
 
             fig.update_layout(
                 polar=dict(
-                    bgcolor="#0d2240",
+                    bgcolor="#ffffff",
                     radialaxis=dict(
                         visible=True, range=[0, 100],
                         tickfont=dict(color="#666666", size=9),
@@ -451,9 +451,9 @@ with tab_comparaison:
                         linecolor="#444444",
                     ),
                 ),
-                paper_bgcolor="#0d2240",
-                font_color="#c0d8f0",
-                legend=dict(orientation="h", y=-0.1, font_color="#c0d8f0"),
+                paper_bgcolor="#ffffff",
+                font_color="#1a3a5c",
+                legend=dict(orientation="h", y=-0.1, font_color="#1a3a5c"),
                 height=520,
                 margin=dict(t=40, b=60, l=60, r=60),
             )
@@ -485,7 +485,7 @@ with tab_comparaison:
                                           "#F0E442", "#D55E00", "#0072B2", "#7FDBFF"][:len(joueurs_sel)],
             )
             fig.update_layout(
-                legend=dict(orientation="h", y=1.12, font_color="#c0d8f0"),
+                legend=dict(orientation="h", y=1.12, font_color="#1a3a5c"),
                 height=420,
                 **{k: v for k, v in PLOTLY_LAYOUT.items() if k != "height"},
             )
