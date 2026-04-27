@@ -21,27 +21,27 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    .stApp { background-color: #0e0e0e; color: #f0f0f0; }
-    [data-testid="stSidebar"] { background-color: #1a1a1a; }
-    h1 { color: #ffffff; font-weight: 800; letter-spacing: 1px; }
-    h2, h3 { color: #e0e0e0; }
+    .stApp { background-color: #071626; color: #e0f0ff; }
+    [data-testid="stSidebar"] { background-color: #0d2240; }
+    h1 { color: #e0f0ff; font-weight: 800; letter-spacing: 1px; }
+    h2, h3 { color: #c0d8f0; }
 
     /* Cartes KPI */
     [data-testid="stMetric"] {
-        background-color: #161616;
-        border: 1px solid #2a2a2a;
+        background-color: #0d2240;
+        border: 1px solid #1a3a5c;
         border-radius: 10px;
         padding: 18px 20px;
     }
     [data-testid="stMetricLabel"] {
-        color: #bbbbbb;
+        color: #7ab8d8;
         font-size: 0.8rem;
         text-transform: uppercase;
         letter-spacing: 0.6px;
         font-weight: 700;
     }
     [data-testid="stMetricValue"] {
-        color: #ffffff;
+        color: #e0f0ff;
         font-weight: 800;
         font-size: 1.65rem !important;
         white-space: nowrap;
@@ -57,13 +57,13 @@ st.markdown("""
         margin: 20px 0 10px 0;
         border-radius: 4px;
     }
-    .section-gps  { color: #56B4E9; border-left: 3px solid #56B4E9; background: #56B4E910; }
+    .section-gps  { color: #4da8d8; border-left: 3px solid #4da8d8; background: #4da8d810; }
     .section-tech { color: #E69F00; border-left: 3px solid #E69F00; background: #E69F0010; }
 
-    [data-testid="stSelectbox"] label { color: #aaaaaa; }
-    hr { border-color: #2a2a2a; }
-    .stCaption { color: #666; }
-    [data-testid="stDataFrame"] { border: 1px solid #2a2a2a; border-radius: 8px; }
+    [data-testid="stSelectbox"] label { color: #7ab8d8; }
+    hr { border-color: #1a3a5c; }
+    .stCaption { color: #4a7a9b; }
+    [data-testid="stDataFrame"] { border: 1px solid #1a3a5c; border-radius: 8px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -264,27 +264,27 @@ def render_radar(vals: dict, selected_labels: list, team_ref: pd.Series):
     fig = go.Figure(go.Scatterpolar(
         r=r_plot, theta=theta,
         fill="toself",
-        fillcolor="rgba(86,180,233,0.09)",
-        line=dict(color="#56B4E9", width=2.5),
+        fillcolor="rgba(77,168,216,0.09)",
+        line=dict(color="#4da8d8", width=2.5),
         text=t_plot,
         hovertemplate="%{theta} : %{text}<extra></extra>",
     ))
     fig.update_layout(
         polar=dict(
-            bgcolor="#161616",
+            bgcolor="#0d2240",
             radialaxis=dict(
                 visible=True, range=[0, 100],
                 tickvals=[25, 50, 75, 100],
-                tickfont=dict(color="#444", size=9),
-                gridcolor="#2a2a2a", linecolor="#2a2a2a",
+                tickfont=dict(color="#1e4a6a", size=9),
+                gridcolor="#1a3a5c", linecolor="#1a3a5c",
             ),
             angularaxis=dict(
                 tickfont=dict(color="#cccccc", size=11),
-                gridcolor="#2a2a2a", linecolor="#333",
+                gridcolor="#1a3a5c", linecolor="#333",
             ),
         ),
-        paper_bgcolor="#0e0e0e",
-        font_color="#cccccc",
+        paper_bgcolor="#071626",
+        font_color="#c0d8f0",
         height=500,
         margin=dict(t=30, b=30, l=80, r=80),
         showlegend=False,
@@ -337,7 +337,7 @@ col_logo, col_titre = st.columns([1, 6])
 with col_logo:
     logo_path = Path(__file__).parent.parent / "logo.jpg"
     if logo_path.exists():
-        st.image(str(logo_path), width=90)
+        st.image(str(logo_path), width=140)
 with col_titre:
     st.title("Rugby Data Hub — Performances")
     st.caption("Données GPS STATSports · Nationale 1")

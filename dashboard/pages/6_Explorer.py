@@ -19,29 +19,29 @@ st.set_page_config(page_title="Rugby Data Hub — Explorateur", page_icon="🔍"
 
 st.markdown("""
 <style>
-    .stApp { background-color: #0e0e0e; color: #f0f0f0; }
-    [data-testid="stSidebar"] { background-color: #1a1a1a; }
+    .stApp { background-color: #071626; color: #e0f0ff; }
+    [data-testid="stSidebar"] { background-color: #0d2240; }
     h1 { color: #ffffff; font-weight: 800; letter-spacing: 1px; }
     h2, h3 { color: #e0e0e0; }
     [data-testid="stMetric"] {
-        background-color: #1a1a1a; border: 1px solid #333;
+        background-color: #0d2240; border: 1px solid #1a3a5c;
         border-radius: 8px; padding: 12px 16px;
     }
-    [data-testid="stMetricLabel"] { color: #aaaaaa; font-size: 0.8rem; }
+    [data-testid="stMetricLabel"] { color: #7ab8d8; font-size: 0.8rem; }
     [data-testid="stMetricValue"] { color: #ffffff; font-weight: 700; }
     [data-testid="stSelectbox"] label,
-    [data-testid="stMultiSelect"] label { color: #aaaaaa; }
-    hr { border-color: #333; }
-    [data-testid="stExpander"] { background-color: #1a1a1a; border: 1px solid #333; border-radius: 8px; }
-    .stCaption { color: #777; }
-    [data-testid="stDataFrame"] { border: 1px solid #333; border-radius: 8px; }
+    [data-testid="stMultiSelect"] label { color: #7ab8d8; }
+    hr { border-color: #1a3a5c; }
+    [data-testid="stExpander"] { background-color: #0d2240; border: 1px solid #1a3a5c; border-radius: 8px; }
+    .stCaption { color: #4a7a9b; }
+    [data-testid="stDataFrame"] { border: 1px solid #1a3a5c; border-radius: 8px; }
 </style>
 """, unsafe_allow_html=True)
 
 PLOTLY_LAYOUT = dict(
-    paper_bgcolor="#1a1a1a", plot_bgcolor="#1a1a1a",
-    font_color="#cccccc",
-    xaxis=dict(gridcolor="#333"), yaxis=dict(gridcolor="#333"),
+    paper_bgcolor="#0d2240", plot_bgcolor="#0d2240",
+    font_color="#c0d8f0",
+    xaxis=dict(gridcolor="#1a3a5c"), yaxis=dict(gridcolor="#1a3a5c"),
     margin=dict(t=20),
 )
 
@@ -232,7 +232,7 @@ col_logo, col_titre = st.columns([1, 6])
 with col_logo:
     logo_path = Path(__file__).parent.parent / "logo.jpg"
     if logo_path.exists():
-        st.image(str(logo_path), width=90)
+        st.image(str(logo_path), width=140)
 with col_titre:
     st.title("Rugby Data Hub — Explorateur de stats")
     st.caption("Outil d'analyse staff · Classement · Comparaison · Tableau")
@@ -438,7 +438,7 @@ with tab_comparaison:
 
             fig.update_layout(
                 polar=dict(
-                    bgcolor="#1a1a1a",
+                    bgcolor="#0d2240",
                     radialaxis=dict(
                         visible=True, range=[0, 100],
                         tickfont=dict(color="#666666", size=9),
@@ -450,9 +450,9 @@ with tab_comparaison:
                         linecolor="#444444",
                     ),
                 ),
-                paper_bgcolor="#1a1a1a",
-                font_color="#cccccc",
-                legend=dict(orientation="h", y=-0.1, font_color="#cccccc"),
+                paper_bgcolor="#0d2240",
+                font_color="#c0d8f0",
+                legend=dict(orientation="h", y=-0.1, font_color="#c0d8f0"),
                 height=520,
                 margin=dict(t=40, b=60, l=60, r=60),
             )
@@ -484,7 +484,7 @@ with tab_comparaison:
                                           "#F0E442", "#D55E00", "#0072B2", "#7FDBFF"][:len(joueurs_sel)],
             )
             fig.update_layout(
-                legend=dict(orientation="h", y=1.12, font_color="#cccccc"),
+                legend=dict(orientation="h", y=1.12, font_color="#c0d8f0"),
                 height=420,
                 **{k: v for k, v in PLOTLY_LAYOUT.items() if k != "height"},
             )

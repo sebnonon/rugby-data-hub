@@ -15,12 +15,12 @@ st.set_page_config(page_title="Rugby Data Hub — Import", page_icon="📤", lay
 
 st.markdown("""
 <style>
-    .stApp { background-color: #0e0e0e; color: #f0f0f0; }
-    [data-testid="stSidebar"] { background-color: #1a1a1a; }
+    .stApp { background-color: #071626; color: #e0f0ff; }
+    [data-testid="stSidebar"] { background-color: #0d2240; }
     h1, h2, h3 { color: #e0e0e0; }
-    [data-testid="stTextInput"] input { background-color: #1a1a1a; color: #f0f0f0; }
-    [data-testid="stSelectbox"] label { color: #aaaaaa; }
-    hr { border-color: #333; }
+    [data-testid="stTextInput"] input { background-color: #0d2240; color: #e0f0ff; }
+    [data-testid="stSelectbox"] label { color: #7ab8d8; }
+    hr { border-color: #1a3a5c; }
     .stAlert { border-radius: 8px; }
 </style>
 """, unsafe_allow_html=True)
@@ -29,7 +29,7 @@ col_logo, col_titre = st.columns([1, 6])
 with col_logo:
     logo_path = Path(__file__).parent.parent / "logo.jpg"
     if logo_path.exists():
-        st.image(str(logo_path), width=90)
+        st.image(str(logo_path), width=140)
 with col_titre:
     st.title("Import données")
     st.caption("Données STATSports")
