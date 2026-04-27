@@ -65,6 +65,7 @@ st.markdown("""
     hr { border-color: #c0d8ea; }
     .stCaption { color: #5a8aaa; }
     [data-testid="stDataFrame"] { border: 1px solid #c0d8ea; border-radius: 8px; }
+    .block-container { padding-top: 1.5rem !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -338,7 +339,7 @@ col_logo, col_titre = st.columns([1, 6])
 with col_logo:
     logo_path = Path(__file__).parent.parent / "logo.jpg"
     if logo_path.exists():
-        st.image(str(logo_path), width=140)
+        st.image(str(logo_path), width=80)
 with col_titre:
     st.title("Rugby Data Hub — Performances")
     st.caption("Données GPS STATSports · Nationale 1")
