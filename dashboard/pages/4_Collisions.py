@@ -82,7 +82,7 @@ df_all = load_data()
 # ── Titre ─────────────────────────────────────────────────────────────────────
 col_logo, col_titre = st.columns([1, 6])
 with col_logo:
-    logo_path = Path(__file__).parent.parent / "logo.png"
+    logo_path = Path(__file__).parent.parent / "logo.jpg"
     if logo_path.exists():
         st.image(str(logo_path), width=90)
 with col_titre:
