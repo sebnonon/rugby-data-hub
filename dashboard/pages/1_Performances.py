@@ -16,7 +16,7 @@ from supabase_client import get_client
 # ── Config page ───────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Rugby Data Hub — Performances",
-    page_icon=Image.open(Path(__file__).parent.parent / "logo.jpg"),
+    page_icon=Image.open(Path(__file__).parent.parent / "logo.jpg") if (Path(__file__).parent.parent / "logo.jpg").exists() else "🏉",
     layout="wide",
 )
 

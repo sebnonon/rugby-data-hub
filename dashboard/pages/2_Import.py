@@ -12,7 +12,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent / "pipeline"))
 from parsers import PARSERS
 from supabase_client import get_client
 
-st.set_page_config(page_title="Rugby Data Hub — Import", page_icon=Image.open(Path(__file__).parent.parent / "logo.jpg"), layout="wide")
+st.set_page_config(page_title="Rugby Data Hub — Import", page_icon=Image.open(Path(__file__).parent.parent / "logo.jpg") if (Path(__file__).parent.parent / "logo.jpg").exists() else "🏉", layout="wide")
 
 st.markdown("""
 <style>
