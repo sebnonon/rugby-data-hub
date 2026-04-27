@@ -33,16 +33,14 @@ Le croisement GPS + vidéo permet par exemple de mettre en regard la charge phys
 
 **[👉 Voir la démo en ligne](https://rugby-data-hub.fly.dev/)**
 
-**6 pages disponibles :**
+**4 onglets :**
 
-| Page | Contenu |
+| Onglet | Contenu |
 |---|---|
-| Performances | Distance, vitesse max, sprints, HSR + actions vidéo (passes, plaquages…) par joueur et par match |
-| Entraînements | Charge par séance (J-2 / J-1 / J+2 / Reprise), ACWR hebdomadaire |
-| Collisions | Nombre de contacts, charge, distribution d'intensité, time to feet |
-| Mêlées | Scrum load, impact individuel des avants, timeline par match |
-| Explorateur | Classement top N, comparaison multi-joueurs, radar métriques |
-| Import | Upload CSV, validation et aperçu des données (démo) |
+| Perf. joueur | Stats GPS + actions vidéo par joueur et par match (ou moyenne saison) · Comparaison multi-joueurs (évolution, agrégé, radar) |
+| Suivi entraînement | Charge par séance (J-2 / J-1 / J+2 / Reprise), ACWR hebdomadaire |
+| Perf. équipe | GPS & codage match agrégés équipe · Mêlées (scrum load, impact, timeline) · Touches (zone, alignement) · Toggle Match / Moyenne |
+| Import / Export | Upload CSV STATSports avec validation · Export CSV filtrable par joueur, période et colonnes |
 
 ---
 
@@ -102,14 +100,12 @@ pipeline/
   supabase_client.py      ← client Supabase (dual-env .env / Streamlit Secrets)
 
 dashboard/
-  app.py                  ← point d'entrée multi-page (st.navigation)
+  app.py                  ← point d'entrée multi-page (st.navigation) — 4 onglets
   pages/
-    1_Performances.py
-    2_Import.py
-    3_Entrainements.py
-    4_Collisions.py
-    5_Melees.py
-    6_Explorer.py
+    1_Performances.py     ← perf. joueur + comparaison multi-joueurs
+    2_Import.py           ← import CSV + export CSV filtrable
+    3_Entrainements.py    ← suivi entraînement, ACWR
+    7_Equipe.py           ← perf. équipe (GPS, mêlées, touches)
 
 supabase/
   schema.sql
