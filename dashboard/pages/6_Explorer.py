@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 from datetime import date as date_type
 import streamlit as st
+from PIL import Image
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -15,7 +16,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent / "pipeline"))
 from supabase_client import get_client
 
 # ── Config page ───────────────────────────────────────────────────────────────
-st.set_page_config(page_title="Rugby Data Hub — Explorateur", page_icon="🔍", layout="wide")
+st.set_page_config(page_title="Rugby Data Hub — Explorateur", page_icon=Image.open(Path(__file__).parent.parent / "logo.jpg"), layout="wide")
 
 st.markdown("""
 <style>

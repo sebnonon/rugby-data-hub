@@ -5,13 +5,14 @@ Page import données — Rugby Data Hub (démo)
 import sys
 from pathlib import Path
 import streamlit as st
+from PIL import Image
 import pandas as pd
 
 sys.path.append(str(Path(__file__).parent.parent.parent / "pipeline"))
 from parsers import PARSERS
 from supabase_client import get_client
 
-st.set_page_config(page_title="Rugby Data Hub — Import", page_icon="📤", layout="wide")
+st.set_page_config(page_title="Rugby Data Hub — Import", page_icon=Image.open(Path(__file__).parent.parent / "logo.jpg"), layout="wide")
 
 st.markdown("""
 <style>

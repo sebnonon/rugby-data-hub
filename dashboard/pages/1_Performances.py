@@ -6,6 +6,7 @@ Outil de pilotage joueur : stats brutes d'un match sélectionné et moyennes sai
 import sys
 from pathlib import Path
 import streamlit as st
+from PIL import Image
 import pandas as pd
 import plotly.graph_objects as go
 
@@ -15,7 +16,7 @@ from supabase_client import get_client
 # ── Config page ───────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Rugby Data Hub — Performances",
-    page_icon="📊",
+    page_icon=Image.open(Path(__file__).parent.parent / "logo.jpg"),
     layout="wide",
 )
 
