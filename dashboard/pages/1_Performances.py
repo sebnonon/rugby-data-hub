@@ -83,7 +83,7 @@ def load_data():
             "plaquages_total, plaquages_positif, "
             "porteur_total, soutiens_total, contacts_total, essais_total, "
             "minutes_jouees, "
-            "joueur(nom, poste_principal), match(date, adversaire, adversaire_nom_complet, score_rec, score_adv, journee, session_title)"
+            "joueur(nom, prenom, poste_principal), match(date, adversaire, adversaire_nom_complet, score_rec, score_adv, journee, session_title)"
         )
         .execute()
     )
@@ -94,6 +94,7 @@ def load_data():
             "joueur_id":         r["joueur_id"],
             "match_id":          r["match_id"],
             "nom":               r["joueur"]["nom"] if r["joueur"] else None,
+            "prenom":            r["joueur"]["prenom"] if r["joueur"] else None,
             "poste":             r["joueur"]["poste_principal"] if r["joueur"] else None,
             "date":              r["match"]["date"] if r["match"] else None,
             "adversaire":        r["match"]["adversaire"] if r["match"] else None,
@@ -336,7 +337,17 @@ df_all = load_data()
 _radar_cols = [c for c in RADAR_LABELS.values() if c in df_all.columns]
 team_max = df_all[_radar_cols].max()
 
-joueurs = sorted(df_all["nom"].dropna().unique())
+# Construit les labels "Prénom NOM" pour le sélecteur
+df_joueurs_ref = (
+    df_all[["nom", "prenom"]].drop_duplicates()
+    .dropna(subset=["nom"])
+    .sort_values("nom")
+)
+df_joueurs_ref["label"] = df_joueurs_ref.apply(
+    lambda r: f"{r['prenom']} {r['nom']}" if pd.notna(r["prenom"]) else r["nom"], axis=1
+)
+joueur_labels = df_joueurs_ref["label"].tolist()
+label_to_nom  = dict(zip(df_joueurs_ref["label"], df_joueurs_ref["nom"]))
 
 col_logo, col_titre, col_joueur, col_match, col_vue = st.columns([1, 3, 2, 4, 2], gap="small")
 
@@ -351,8 +362,9 @@ with col_titre:
     st.markdown("## Performances joueur")
 
 with col_joueur:
-    joueur = st.selectbox("Joueur", joueurs)
+    joueur_label = st.selectbox("Joueur", joueur_labels)
 
+joueur = label_to_nom[joueur_label]
 df_joueur = df_all[df_all["nom"] == joueur].dropna(subset=["date"]).copy()
 
 
@@ -381,7 +393,7 @@ with col_vue:
 # ── Encadrés info match ───────────────────────────────────────────────────────
 if not df_joueur.empty and matchs_labels and vue == "🏉 Match":
     _row_info = df_joueur[df_joueur["label_match"] == match_sel].iloc[0]
-    _spacer, _c1, _c2, _c3 = st.columns([2, 2, 2, 2])
+    _spacer, _c1, _c2, _c3 = st.columns([4, 2, 2, 2])
     sr, sa = _row_info.get("score_rec"), _row_info.get("score_adv")
     try:
         _score = f"{int(sr)} — {int(sa)}" if (pd.notna(sr) and pd.notna(sa)) else "—"

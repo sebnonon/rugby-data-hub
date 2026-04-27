@@ -7,8 +7,9 @@
 -- Table de référence : joueur
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS joueur (
-    joueur_id   SERIAL PRIMARY KEY,
-    nom         TEXT NOT NULL,
+    joueur_id       SERIAL PRIMARY KEY,
+    nom             TEXT NOT NULL,
+    prenom          TEXT,
     poste_principal TEXT
 );
 

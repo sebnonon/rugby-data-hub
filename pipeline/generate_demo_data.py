@@ -68,48 +68,49 @@ def delete_all() -> None:
 
 # ── Joueurs ────────────────────────────────────────────────────────────────────
 
-POSTES = [
+JOUEURS = [
+    # (nom, prenom, poste)
     # Avants
-    ("HARDY",          "Pilier gauche"),     # Tom Hardy
-    ("STALLONE",       "Talonneur"),         # Sylvester Stallone
-    ("SCHWARZENEGGER", "Pilier droit"),      # Arnold Schwarzenegger
-    ("DEPARDIEU",      "2ème ligne"),        # Gérard Depardieu
-    ("HEMSWORTH",      "2ème ligne"),        # Chris Hemsworth
-    ("STATHAM",        "3ème ligne aile"),   # Jason Statham
-    ("DIESEL",         "3ème ligne aile"),   # Vin Diesel
-    ("JOHNSON",        "3ème ligne centre"), # Dwayne Johnson
-    ("CLAVIER",        "Pilier gauche"),     # Christian Clavier
-    ("DUJARDIN",       "Talonneur"),         # Jean Dujardin
-    ("AUTEUIL",        "Pilier droit"),      # Daniel Auteuil
-    ("CAVILL",         "2ème ligne"),        # Henry Cavill
-    ("MAGIMEL",        "2ème ligne"),        # Benoît Magimel
-    ("PRATT",          "3ème ligne aile"),   # Chris Pratt
-    ("BALE",           "3ème ligne aile"),   # Christian Bale
-    ("ELBA",           "3ème ligne centre"), # Idris Elba
-    ("LELLOUCHE",      "Pilier gauche"),     # Gilles Lellouche
-    ("CANET",          "Talonneur"),         # Guillaume Canet
+    ("HARDY",          "Tom",       "Pilier gauche"),
+    ("STALLONE",       "Sylvester", "Talonneur"),
+    ("SCHWARZENEGGER", "Arnold",    "Pilier droit"),
+    ("DEPARDIEU",      "Gérard",    "2ème ligne"),
+    ("HEMSWORTH",      "Chris",     "2ème ligne"),
+    ("STATHAM",        "Jason",     "3ème ligne aile"),
+    ("DIESEL",         "Vin",       "3ème ligne aile"),
+    ("JOHNSON",        "Dwayne",    "3ème ligne centre"),
+    ("CLAVIER",        "Christian", "Pilier gauche"),
+    ("DUJARDIN",       "Jean",      "Talonneur"),
+    ("AUTEUIL",        "Daniel",    "Pilier droit"),
+    ("CAVILL",         "Henry",     "2ème ligne"),
+    ("MAGIMEL",        "Benoît",    "2ème ligne"),
+    ("PRATT",          "Chris",     "3ème ligne aile"),
+    ("BALE",           "Christian", "3ème ligne aile"),
+    ("ELBA",           "Idris",     "3ème ligne centre"),
+    ("LELLOUCHE",      "Gilles",    "Pilier gauche"),
+    ("CANET",          "Guillaume", "Talonneur"),
     # Arrières
-    ("DEPP",           "Demi de mêlée"),     # Johnny Depp
-    ("PITT",           "Demi d'ouverture"),  # Brad Pitt
-    ("CLOONEY",        "Centre"),            # George Clooney
-    ("GOSLING",        "Centre"),            # Ryan Gosling
-    ("EFRON",          "Ailier"),            # Zac Efron
-    ("REYNOLDS",       "Ailier"),            # Ryan Reynolds
-    ("DAMON",          "Arrière"),           # Matt Damon
-    ("MCCONAUGHEY",    "Demi de mêlée"),     # Matthew McConaughey
-    ("DICAPRIO",       "Demi d'ouverture"),  # Leonardo DiCaprio
-    ("ATTAL",          "Centre"),            # Yvan Attal
-    ("EVANS",          "Ailier"),            # Chris Evans
-    ("KASSOVITZ",      "Ailier"),            # Mathieu Kassovitz
-    ("GARREL",         "Arrière"),           # Louis Garrel
-    ("EASTWOOD",       "Arrière"),           # Clint Eastwood
-    ("RENNER",         "Centre"),            # Jeremy Renner
+    ("DEPP",           "Johnny",    "Demi de mêlée"),
+    ("PITT",           "Brad",      "Demi d'ouverture"),
+    ("CLOONEY",        "George",    "Centre"),
+    ("GOSLING",        "Ryan",      "Centre"),
+    ("EFRON",          "Zac",       "Ailier"),
+    ("REYNOLDS",       "Ryan",      "Ailier"),
+    ("DAMON",          "Matt",      "Arrière"),
+    ("MCCONAUGHEY",    "Matthew",   "Demi de mêlée"),
+    ("DICAPRIO",       "Leonardo",  "Demi d'ouverture"),
+    ("ATTAL",          "Yvan",      "Centre"),
+    ("EVANS",          "Chris",     "Ailier"),
+    ("KASSOVITZ",      "Mathieu",   "Ailier"),
+    ("GARREL",         "Louis",     "Arrière"),
+    ("EASTWOOD",       "Clint",     "Arrière"),
+    ("RENNER",         "Jeremy",    "Centre"),
 ]
 
 AVANTS_POSTES = {"Pilier gauche", "Talonneur", "Pilier droit",
                  "2ème ligne", "3ème ligne aile", "3ème ligne centre"}
 
-joueurs_data = [{"nom": nom, "poste_principal": poste} for nom, poste in POSTES]
+joueurs_data = [{"nom": nom, "prenom": prenom, "poste_principal": poste} for nom, prenom, poste in JOUEURS]
 
 def gen_score() -> tuple[int, int]:
     """Génère un score réaliste pour REC et l'adversaire."""
