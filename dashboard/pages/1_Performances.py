@@ -335,14 +335,14 @@ df_all = load_data()
 _radar_cols = [c for c in RADAR_LABELS.values() if c in df_all.columns]
 team_max = df_all[_radar_cols].max()
 
-col_logo, col_titre = st.columns([1, 6])
+col_logo, col_titre = st.columns([1, 12], gap="small")
 with col_logo:
     logo_path = Path(__file__).parent.parent / "logo.jpg"
     if logo_path.exists():
+        st.markdown('<div style="margin-top: 32px"></div>', unsafe_allow_html=True)
         st.image(str(logo_path), width=80)
 with col_titre:
     st.title("Performances joueur")
-    st.caption("Données GPS STATSports · Nationale 1")
 
 joueurs = sorted(df_all["nom"].dropna().unique())
 
