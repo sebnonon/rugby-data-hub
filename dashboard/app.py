@@ -7,11 +7,9 @@ import streamlit as st
 st.set_page_config(page_title="Rugby Data Hub", page_icon="🏉", layout="wide")
 
 pg = st.navigation([
-    st.Page("pages/1_Performances.py",  title="Performances",   icon="📊"),
-    st.Page("pages/3_Entrainements.py", title="Entraînements",  icon="🏋️"),
-    st.Page("pages/4_Collisions.py",    title="Collisions",     icon="💥"),
-    st.Page("pages/5_Melees.py",        title="Mêlées",         icon="🏉"),
-    st.Page("pages/6_Explorer.py",      title="Explorateur",    icon="🔍"),
-    st.Page("pages/2_Import.py",        title="Import données", icon="📤"),
+    st.Page("pages/1_Performances.py",  title="Perf. joueur",       icon="📊"),
+    st.Page("pages/3_Entrainements.py", title="Suivi entraînement",  icon="🏋️"),
+    st.Page("pages/7_Equipe.py",        title="Perf. équipe",        icon="🏉"),
+    st.Page("pages/2_Import.py",        title="Import / Export",     icon="📤"),
 ])
 pg.run()

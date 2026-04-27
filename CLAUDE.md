@@ -101,13 +101,16 @@ Full schema: `supabase/schema.sql`
 
 Entry point: `dashboard/app.py` — uses `st.navigation()` for multi-page routing. **New pages must be registered there.**
 
-Pages numbered by load order (not navigation index):
-- `1_Performances.py` — GPS metrics per player per match
-- `2_Import.py` — Staff CSV upload with password (`STAFF_PASSWORD` secret), validation, and direct Supabase import
+Active pages (4 tabs):
+- `1_Performances.py` — Player match performance: individual stats (GPS + actions) per match or season average, plus multi-player comparison (evolution, aggregated, radar)
 - `3_Entrainements.py` — Training load, ACWR
-- `4_Collisions.py` — Collision events
-- `5_Melees.py` — Scrum data
-- `6_Explorer.py` — Top-N rankings, multi-player comparison, radar charts
+- `7_Equipe.py` — Team match performance: GPS + video coding aggregated per match, scrums (mêlées), and lineouts (touches); Match/Moyenne toggle
+- `2_Import.py` — CSV import (STATSports) + advanced CSV export with filters
+
+Inactive pages (kept on disk, not in navigation):
+- `4_Collisions.py` — Collision events (individual player view)
+- `5_Melees.py` — Scrum data (team + player view; team content merged into `7_Equipe.py`)
+- `6_Explorer.py` — Rankings, comparison, free table (comparison merged into `1_Performances.py`, free table merged into `2_Import.py`)
 
 ## CSV filename conventions (required for dashboard upload)
 
