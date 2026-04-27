@@ -114,77 +114,76 @@ with tab_import:
 
     uploaded = st.file_uploader("Choisir un fichier CSV", type=["csv"])
 
-    if uploaded is None:
-        st.stop()
+    if uploaded is not None:
+        # Validation du nom de fichier
+        parser = PARSERS[type_fichier]
+        valide, erreur, metadata = parser.validate_filename(uploaded.name)
 
-    # Validation du nom de fichier
-    parser = PARSERS[type_fichier]
-    valide, erreur, metadata = parser.validate_filename(uploaded.name)
+        if not valide:
+            st.error(f"**Nom de fichier invalide**\n\n{erreur}")
+        else:
+            st.success(f"Nomenclature valide : **{uploaded.name}**")
+            if metadata:
+                meta_str = " · ".join(f"{k} = `{v}`" for k, v in metadata.items())
+                st.caption(f"Métadonnées extraites : {meta_str}")
 
-    if not valide:
-        st.error(f"**Nom de fichier invalide**\n\n{erreur}")
-        st.stop()
+            # Chargement et validation du contenu
+            try:
+                df_raw = pd.read_csv(uploaded)
+            except Exception as e:
+                st.error(f"Impossible de lire le CSV : {e}")
+                df_raw = None
 
-    st.success(f"Nomenclature valide : **{uploaded.name}**")
-    if metadata:
-        meta_str = " · ".join(f"{k} = `{v}`" for k, v in metadata.items())
-        st.caption(f"Métadonnées extraites : {meta_str}")
+            if df_raw is not None:
+                cols_manquantes = [c for c in parser.REQUIRED_COLUMNS if c not in df_raw.columns]
+                for attr, label in [("PLAYER_NAME_COLS", "colonne joueur"), ("DISTANCE_COLS", "colonne distance")]:
+                    alt_cols = getattr(parser, attr, None)
+                    if alt_cols and not any(c in df_raw.columns for c in alt_cols):
+                        cols_manquantes.append(f"{label} ({' ou '.join(alt_cols)})")
+                if cols_manquantes:
+                    st.error(f"Colonnes requises manquantes : {', '.join(cols_manquantes)}")
+                else:
+                    st.markdown(f"**{len(df_raw)} lignes brutes** détectées dans le fichier.")
 
-    # Chargement et validation du contenu
-    try:
-        df_raw = pd.read_csv(uploaded)
-    except Exception as e:
-        st.error(f"Impossible de lire le CSV : {e}")
-        st.stop()
+                    @st.cache_data(ttl=120)
+                    def load_refs():
+                        c = get_client()
+                        joueurs = pd.DataFrame(c.table("joueur").select("joueur_id, nom").execute().data)
+                        matchs  = pd.DataFrame(c.table("match").select("match_id, session_title").execute().data)
+                        return joueurs, matchs
 
-    cols_manquantes = [c for c in parser.REQUIRED_COLUMNS if c not in df_raw.columns]
-    for attr, label in [("PLAYER_NAME_COLS", "colonne joueur"), ("DISTANCE_COLS", "colonne distance")]:
-        alt_cols = getattr(parser, attr, None)
-        if alt_cols and not any(c in df_raw.columns for c in alt_cols):
-            cols_manquantes.append(f"{label} ({' ou '.join(alt_cols)})")
-    if cols_manquantes:
-        st.error(f"Colonnes requises manquantes : {', '.join(cols_manquantes)}")
-        st.stop()
+                    with st.spinner("Chargement des références…"):
+                        joueurs_df, matchs_df = load_refs()
 
-    st.markdown(f"**{len(df_raw)} lignes brutes** détectées dans le fichier.")
+                    with st.spinner("Parsing du fichier…"):
+                        try:
+                            if type_fichier == "actions_match":
+                                parsed = parser.parse(df_raw, joueurs_df, matchs_df, filename=uploaded.name)
+                                df_preview = parsed["perf_match_actions"]
+                            else:
+                                df_preview = parser.parse(df_raw, joueurs_df, matchs_df, filename=uploaded.name)
+                            parse_ok = True
+                        except Exception as e:
+                            st.error(f"Erreur lors du parsing : {e}")
+                            parse_ok = False
 
-    @st.cache_data(ttl=120)
-    def load_refs():
-        c = get_client()
-        joueurs = pd.DataFrame(c.table("joueur").select("joueur_id, nom").execute().data)
-        matchs  = pd.DataFrame(c.table("match").select("match_id, session_title").execute().data)
-        return joueurs, matchs
+                    if parse_ok:
+                        col1, col2, col3 = st.columns(3)
+                        lignes_total = len(df_preview)
+                        sans_joueur  = df_preview["joueur_id"].isna().sum() if "joueur_id" in df_preview.columns else 0
+                        sans_match   = df_preview["match_id"].isna().sum()  if "match_id"  in df_preview.columns else 0
 
-    with st.spinner("Chargement des références…"):
-        joueurs_df, matchs_df = load_refs()
+                        col1.metric("Lignes parsées",    lignes_total)
+                        col2.metric("Sans joueur_id ⚠️", sans_joueur)
+                        col3.metric("Sans match_id ⚠️",  sans_match)
 
-    with st.spinner("Parsing du fichier…"):
-        try:
-            if type_fichier == "actions_match":
-                parsed = parser.parse(df_raw, joueurs_df, matchs_df, filename=uploaded.name)
-                df_preview = parsed["perf_match_actions"]
-            else:
-                df_preview = parser.parse(df_raw, joueurs_df, matchs_df, filename=uploaded.name)
-        except Exception as e:
-            st.error(f"Erreur lors du parsing : {e}")
-            st.stop()
+                        with st.expander("Aperçu des données parsées (5 premières lignes)"):
+                            st.dataframe(df_preview.head(), use_container_width=True, hide_index=True)
 
-    col1, col2, col3 = st.columns(3)
-    lignes_total = len(df_preview)
-    sans_joueur  = df_preview["joueur_id"].isna().sum() if "joueur_id" in df_preview.columns else 0
-    sans_match   = df_preview["match_id"].isna().sum()  if "match_id"  in df_preview.columns else 0
+                        st.divider()
 
-    col1.metric("Lignes parsées",    lignes_total)
-    col2.metric("Sans joueur_id ⚠️", sans_joueur)
-    col3.metric("Sans match_id ⚠️",  sans_match)
-
-    with st.expander("Aperçu des données parsées (5 premières lignes)"):
-        st.dataframe(df_preview.head(), use_container_width=True, hide_index=True)
-
-    st.divider()
-
-    if st.button("Importer dans Supabase", type="primary"):
-        st.info("Ceci est une démo — l'import n'est pas réellement disponible.")
+                        if st.button("Importer dans Supabase", type="primary"):
+                            st.info("Ceci est une démo — l'import n'est pas réellement disponible.")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
