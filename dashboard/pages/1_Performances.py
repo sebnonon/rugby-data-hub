@@ -365,7 +365,7 @@ def render_radar(vals: dict, selected_labels: list, team_ref: pd.Series, team_me
                 vals_norm.append(0)
                 vals_txt.append("—")
             else:
-                vals_norm.append(min(round(float(raw) / ref * 100, 1), 110))
+                vals_norm.append(min(round(float(raw) / ref * 100, 1), 100))
                 vals_txt.append(f"{float(raw):.1f}")
         except (TypeError, ValueError):
             vals_norm.append(0)
