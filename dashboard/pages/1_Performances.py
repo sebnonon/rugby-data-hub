@@ -73,6 +73,8 @@ st.markdown("""
     [data-testid="stDataFrame"] { border: 1px solid #c0d8ea; border-radius: 8px; }
     .block-container { padding-top: 3rem !important; }
     [data-testid="stTabs"] { margin-top: -4rem; }
+    [data-testid="stRadio"] { position: relative; z-index: 10; }
+    [data-testid="stSlider"] { zoom: reset; }
 
 </style>
 """, unsafe_allow_html=True)
@@ -476,7 +478,10 @@ tab_joueur, tab_compare = st.tabs(["📊 Joueur", "⚖️ Comparaison"])
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_joueur:
     # ── Ligne du haut : sélecteurs + encadrés ─────────────────────────────────
-    c1, c2, c_j, c_s, c_t, c_p = st.columns([1.8, 2.5, 1.3, 1.6, 1.5, 1.3], gap="small")
+    if vue == "🏉 Match":
+        c1, c2, c_j, c_s, c_t, c_p = st.columns([1.8, 2.5, 1.3, 1.6, 1.5, 1.3], gap="small")
+    else:
+        c1, c2, c_date, c_p = st.columns([1.8, 2.5, 4.4, 1.3], gap="small")
 
     with c1:
         joueur_label = st.selectbox("Joueur", joueur_labels, key="j_joueur")
@@ -492,42 +497,76 @@ with tab_joueur:
     df_joueur["label_match"] = df_joueur.apply(_make_match_label, axis=1)
     matchs_labels = df_joueur.sort_values("date", ascending=False)["label_match"].tolist()
 
-    with c2:
-        match_sel = st.selectbox(
-            "Match", matchs_labels if matchs_labels else ["—"],
-            key="j_match_sel", disabled=(not matchs_labels or vue == "📊 Moyenne"),
-        )
+    _poste_raw = df_joueur["poste"].dropna().iloc[0] if not df_joueur.empty and df_joueur["poste"].notna().any() else None
+    _poste = str(_poste_raw) if _poste_raw else "—"
 
-    # Encadrés — toujours visibles, « — » en vue Moyenne sauf Poste
-    if not df_joueur.empty and matchs_labels and vue == "🏉 Match":
-        _row_info = df_joueur[df_joueur["label_match"] == match_sel].iloc[0]
-        _journee = _row_info.get("journee")
-        try:
-            _journee_str = f"J{int(_journee)}" if pd.notna(_journee) else "—"
-        except (TypeError, ValueError):
-            _journee_str = "—"
-        sr, sa = _row_info.get("score_rec"), _row_info.get("score_adv")
-        try:
-            _score = f"{int(sr)} — {int(sa)}" if (pd.notna(sr) and pd.notna(sa)) else "—"
-        except (TypeError, ValueError):
-            _score = "—"
-        _minutes = _row_info.get("minutes_jouees")
-        try:
-            _min_str = f"{int(_minutes)} min" if pd.notna(_minutes) else "—"
-        except (TypeError, ValueError):
-            _min_str = "—"
-        _poste = _row_info.get("poste") or "—"
-    else:
-        _journee_str = "—"
-        _score = "—"
-        _min_str = "—"
-        _poste_raw = df_joueur["poste"].dropna().iloc[0] if not df_joueur.empty and df_joueur["poste"].notna().any() else None
-        _poste = str(_poste_raw) if _poste_raw else "—"
+    if vue == "🏉 Match":
+        with c2:
+            match_sel = st.selectbox(
+                "Match", matchs_labels if matchs_labels else ["—"],
+                key="j_match_sel", disabled=not matchs_labels,
+            )
 
-    c_j.metric("Journée", _journee_str)
-    c_s.metric("Score", _score)
-    c_t.metric("Temps de jeu", _min_str)
-    c_p.metric("Poste", _poste)
+        if not df_joueur.empty and matchs_labels:
+            _row_info = df_joueur[df_joueur["label_match"] == match_sel].iloc[0]
+            _journee = _row_info.get("journee")
+            try:
+                _journee_str = f"J{int(_journee)}" if pd.notna(_journee) else "—"
+            except (TypeError, ValueError):
+                _journee_str = "—"
+            sr, sa = _row_info.get("score_rec"), _row_info.get("score_adv")
+            try:
+                _score = f"{int(sr)} — {int(sa)}" if (pd.notna(sr) and pd.notna(sa)) else "—"
+            except (TypeError, ValueError):
+                _score = "—"
+            _minutes = _row_info.get("minutes_jouees")
+            try:
+                _min_str = f"{int(_minutes)} min" if pd.notna(_minutes) else "—"
+            except (TypeError, ValueError):
+                _min_str = "—"
+            _poste = _row_info.get("poste") or "—"
+        else:
+            _journee_str = _score = _min_str = "—"
+
+        c_j.metric("Journée", _journee_str)
+        c_s.metric("Score", _score)
+        c_t.metric("Temps de jeu", _min_str)
+        c_p.metric("Poste", _poste)
+
+    else:  # Vue Moyenne
+        def _get_saison(d):
+            return f"{d.year}/{d.year+1}" if d.month >= 8 else f"{d.year-1}/{d.year}"
+
+        if not df_joueur.empty:
+            df_joueur["saison"] = df_joueur["date"].apply(_get_saison)
+            saisons_dispo = sorted(df_joueur["saison"].unique(), reverse=True)
+        else:
+            saisons_dispo = []
+
+        with c2:
+            saison_sel = st.selectbox("Saison", ["Toutes"] + saisons_dispo, key="j_saison")
+
+        df_filtre = df_joueur if saison_sel == "Toutes" else df_joueur[df_joueur["saison"] == saison_sel]
+        d_min = df_filtre["date"].min().date() if not df_filtre.empty else pd.Timestamp.today().date()
+        d_max = df_filtre["date"].max().date() if not df_filtre.empty else pd.Timestamp.today().date()
+
+        with c_date:
+            dates_dispo = sorted(df_filtre["date"].dt.date.unique()) if not df_filtre.empty else [d_min]
+            date_range = st.select_slider(
+                "Période",
+                options=dates_dispo,
+                value=(dates_dispo[0], dates_dispo[-1]),
+                format_func=lambda d: d.strftime("%d/%m/%y"),
+                key=f"j_sel2_{joueur}_{saison_sel}",
+            )
+
+        if len(date_range) == 2:
+            df_joueur = df_joueur[
+                (df_joueur["date"].dt.date >= date_range[0]) &
+                (df_joueur["date"].dt.date <= date_range[1])
+            ]
+
+        c_p.metric("Poste", _poste)
 
     # ── Section centrale : Radar (gauche) + KPIs (droite) ─────────────────────
     if vue == "🏉 Match":
