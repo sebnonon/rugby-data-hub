@@ -68,6 +68,7 @@ st.markdown("""
     .stCaption { color: #5a8aaa; }
     [data-testid="stDataFrame"] { border: 1px solid #c0d8ea; border-radius: 8px; }
     .block-container { padding-top: 3rem !important; }
+    [data-testid="stTabs"] { margin-top: -4rem; }
 
 </style>
 """, unsafe_allow_html=True)
@@ -451,18 +452,27 @@ joueur_labels = df_joueurs_ref["label"].tolist()
 label_to_nom  = dict(zip(df_joueurs_ref["label"], df_joueurs_ref["nom"]))
 
 
-st.markdown(
-    '<p style="font-weight:700; font-size:1.3rem; color:#071626; margin-bottom:-2.9rem; padding-top:0.9rem; text-align:center;">Performances joueur</p>',
-    unsafe_allow_html=True,
-)
+_c_titre, _c_vue = st.columns([7, 2])
+with _c_titre:
+    st.markdown(
+        '<p style="font-weight:700; font-size:1.1rem; color:#071626; margin:0; padding:0.5rem 0 0 0; text-align:center;">Performances joueur</p>',
+        unsafe_allow_html=True,
+    )
+with _c_vue:
+    st.markdown('<div style="height:0.35rem"></div>', unsafe_allow_html=True)
+    vue = st.radio(
+        "Vue", ["🏉 Match", "📊 Moyenne"],
+        horizontal=True, label_visibility="collapsed", key="j_vue",
+    )
+
 tab_joueur, tab_compare = st.tabs(["📊 Joueur", "⚖️ Comparaison"])
 
 # ══════════════════════════════════════════════════════════════════════════════
 # ONGLET JOUEUR
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_joueur:
-    # ── Ligne du haut : sélecteurs + encadrés + toggle ────────────────────────
-    c1, c2, c_j, c_s, c_t, c_p, c_vue = st.columns([2.5, 3.5, 1.1, 1.5, 1.3, 1.3, 1.8], gap="small")
+    # ── Ligne du haut : sélecteurs + encadrés ─────────────────────────────────
+    c1, c2, c_j, c_s, c_t, c_p = st.columns([2.5, 3.5, 1.1, 1.5, 1.3, 1.3], gap="small")
 
     with c1:
         joueur_label = st.selectbox("Joueur", joueur_labels, key="j_joueur")
@@ -477,13 +487,6 @@ with tab_joueur:
 
     df_joueur["label_match"] = df_joueur.apply(_make_match_label, axis=1)
     matchs_labels = df_joueur.sort_values("date", ascending=False)["label_match"].tolist()
-
-    with c_vue:
-        st.markdown('<div style="height:27px"></div>', unsafe_allow_html=True)
-        vue = st.radio(
-            "Vue", ["🏉 Match", "📊 Moyenne"],
-            horizontal=True, label_visibility="collapsed", key="j_vue",
-        )
 
     with c2:
         match_sel = st.selectbox(
