@@ -24,7 +24,7 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    .stApp { background-color: #f0f6fb; color: #071626; }
+    .stApp { background-color: #f0f6fb; color: #071626; zoom: 0.9; }
     [data-testid="stSidebar"] { background-color: #ffffff; }
     h1 { color: #071626; font-weight: 800; letter-spacing: 1px; }
     h2, h3 { color: #1a3a5c; }
@@ -67,7 +67,8 @@ st.markdown("""
     hr { border-color: #c0d8ea; }
     .stCaption { color: #5a8aaa; }
     [data-testid="stDataFrame"] { border: 1px solid #c0d8ea; border-radius: 8px; }
-    .block-container { padding-top: 1.5rem !important; }
+    .block-container { padding-top: 3rem !important; }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -391,7 +392,7 @@ def render_radar(vals: dict, selected_labels: list, team_ref: pd.Series):
         ),
         paper_bgcolor="#f0f6fb",
         font_color="#1a3a5c",
-        height=500,
+        height=380,
         margin=dict(t=30, b=30, l=80, r=80),
         showlegend=False,
     )
@@ -410,14 +411,15 @@ def render_kpis_section(
     css_class: str,
     is_moyenne: bool = False,
     all_labels: dict[str, str] = RADAR_LABELS,
+    ncols: int = 3,
 ):
     section(section_label, css_class)
     if not selected_labels:
         st.caption("Aucune métrique sélectionnée.")
         return
-    for i in range(0, len(selected_labels), 3):
-        chunk = selected_labels[i:i+3]
-        cols = st.columns(3)
+    for i in range(0, len(selected_labels), ncols):
+        chunk = selected_labels[i:i+ncols]
+        cols = st.columns(ncols)
         for j, lbl in enumerate(chunk):
             col_name = all_labels.get(lbl)
             if col_name is None:
@@ -448,27 +450,21 @@ df_joueurs_ref["label"] = df_joueurs_ref.apply(
 joueur_labels = df_joueurs_ref["label"].tolist()
 label_to_nom  = dict(zip(df_joueurs_ref["label"], df_joueurs_ref["nom"]))
 
-col_logo, col_titre = st.columns([1, 8], gap="small")
-with col_logo:
-    logo_path = Path(__file__).parent.parent / "logo.jpg"
-    if logo_path.exists():
-        st.markdown('<div style="margin-top: 20px"></div>', unsafe_allow_html=True)
-        st.image(str(logo_path), width=80)
-with col_titre:
-    st.markdown('<div style="margin-top: 22px"></div>', unsafe_allow_html=True)
-    st.markdown("## Performances joueur")
 
-st.divider()
-
+st.markdown(
+    '<p style="font-weight:700; font-size:1.3rem; color:#071626; margin-bottom:-2.9rem; padding-top:0.9rem; text-align:center;">Performances joueur</p>',
+    unsafe_allow_html=True,
+)
 tab_joueur, tab_compare = st.tabs(["📊 Joueur", "⚖️ Comparaison"])
 
 # ══════════════════════════════════════════════════════════════════════════════
 # ONGLET JOUEUR
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_joueur:
-    col_joueur, col_match, col_vue = st.columns([2, 4, 2], gap="small")
+    # ── Ligne du haut : sélecteurs + encadrés + toggle ────────────────────────
+    c1, c2, c_j, c_s, c_t, c_p, c_vue = st.columns([2.5, 3.5, 1.1, 1.5, 1.3, 1.3, 1.8], gap="small")
 
-    with col_joueur:
+    with c1:
         joueur_label = st.selectbox("Joueur", joueur_labels, key="j_joueur")
 
     joueur = label_to_nom[joueur_label]
@@ -482,67 +478,79 @@ with tab_joueur:
     df_joueur["label_match"] = df_joueur.apply(_make_match_label, axis=1)
     matchs_labels = df_joueur.sort_values("date", ascending=False)["label_match"].tolist()
 
-    with col_match:
-        match_sel = st.selectbox(
-            "Match", matchs_labels if matchs_labels else ["—"],
-            key="j_match_sel", disabled=not matchs_labels,
-        )
-
-    with col_vue:
+    with c_vue:
         st.markdown('<div style="height:27px"></div>', unsafe_allow_html=True)
         vue = st.radio(
             "Vue", ["🏉 Match", "📊 Moyenne"],
             horizontal=True, label_visibility="collapsed", key="j_vue",
         )
 
-    # Encadrés info match
+    with c2:
+        match_sel = st.selectbox(
+            "Match", matchs_labels if matchs_labels else ["—"],
+            key="j_match_sel", disabled=(not matchs_labels or vue == "📊 Moyenne"),
+        )
+
+    # Encadrés — toujours visibles, « — » en vue Moyenne sauf Poste
     if not df_joueur.empty and matchs_labels and vue == "🏉 Match":
         _row_info = df_joueur[df_joueur["label_match"] == match_sel].iloc[0]
-        _spacer, _c1, _c2, _c3 = st.columns([4, 2, 2, 2])
-        sr, sa = _row_info.get("score_rec"), _row_info.get("score_adv")
-        try:
-            _score = f"{int(sr)} — {int(sa)}" if (pd.notna(sr) and pd.notna(sa)) else "—"
-        except (TypeError, ValueError):
-            _score = "—"
         _journee = _row_info.get("journee")
         try:
             _journee_str = f"J{int(_journee)}" if pd.notna(_journee) else "—"
         except (TypeError, ValueError):
             _journee_str = "—"
+        sr, sa = _row_info.get("score_rec"), _row_info.get("score_adv")
+        try:
+            _score = f"{int(sr)} — {int(sa)}" if (pd.notna(sr) and pd.notna(sa)) else "—"
+        except (TypeError, ValueError):
+            _score = "—"
         _minutes = _row_info.get("minutes_jouees")
         try:
             _min_str = f"{int(_minutes)} min" if pd.notna(_minutes) else "—"
         except (TypeError, ValueError):
             _min_str = "—"
-        _c1.metric("Score", _score)
-        _c2.metric("Journée", _journee_str)
-        _c3.metric("Temps de jeu", _min_str)
+        _poste = _row_info.get("poste") or "—"
+    else:
+        _journee_str = "—"
+        _score = "—"
+        _min_str = "—"
+        _poste_raw = df_joueur["poste"].dropna().iloc[0] if not df_joueur.empty and df_joueur["poste"].notna().any() else None
+        _poste = str(_poste_raw) if _poste_raw else "—"
 
-    st.divider()
+    c_j.metric("Journée", _journee_str)
+    c_s.metric("Score", _score)
+    c_t.metric("Temps de jeu", _min_str)
+    c_p.metric("Poste", _poste)
 
+    # ── Section centrale : Radar (gauche) + KPIs (droite) ─────────────────────
     if vue == "🏉 Match":
         if df_joueur.empty or not matchs_labels:
             st.info("Aucune donnée disponible pour ce joueur.")
         else:
             row = df_joueur[df_joueur["label_match"] == match_sel].iloc[0].to_dict()
 
+            gps_sel = st.session_state.get("j_gps_match", GPS_DEFAULTS)
+            tech_sel = st.session_state.get("j_tech_match", TECH_DEFAULTS)
+
+            col_radar, col_kpis = st.columns([5, 4], gap="medium")
+            with col_radar:
+                render_radar(row, gps_sel + tech_sel, team_max)
+            with col_kpis:
+                render_kpis_section(row, gps_sel,  "GPS",       "section-gps",  all_labels=GPS_LABELS,  ncols=2)
+                render_kpis_section(row, tech_sel, "Technique", "section-tech", all_labels=TECH_LABELS, ncols=2)
+
+            st.divider()
             cg, ct = st.columns(2)
             with cg:
-                gps_sel_match = st.multiselect(
+                st.multiselect(
                     "Métriques GPS", list(GPS_LABELS.keys()),
                     default=GPS_DEFAULTS, key="j_gps_match",
                 )
             with ct:
-                tech_sel_match = st.multiselect(
+                st.multiselect(
                     "Métriques Technique", list(TECH_LABELS.keys()),
                     default=TECH_DEFAULTS, key="j_tech_match",
                 )
-
-            render_kpis_section(row, gps_sel_match,  "GPS",       "section-gps",  all_labels=GPS_LABELS)
-            render_kpis_section(row, tech_sel_match, "Technique", "section-tech", all_labels=TECH_LABELS)
-
-            st.divider()
-            render_radar(row, gps_sel_match + tech_sel_match, team_max)
 
     else:
         if df_joueur.empty:
@@ -555,23 +563,28 @@ with tab_joueur:
             else:
                 st.caption(f"Moyennes brutes · {n} match{'s' if n > 1 else ''} (minutes jouées non disponibles)")
 
+            gps_sel = st.session_state.get("j_gps_moy", GPS_DEFAULTS)
+            tech_sel = st.session_state.get("j_tech_moy", TECH_DEFAULTS)
+
+            col_radar, col_kpis = st.columns([5, 4], gap="medium")
+            with col_radar:
+                render_radar(stats, gps_sel + tech_sel, team_max)
+            with col_kpis:
+                render_kpis_section(stats, gps_sel,  "GPS",       "section-gps",  is_moyenne=True, all_labels=GPS_LABELS,  ncols=2)
+                render_kpis_section(stats, tech_sel, "Technique", "section-tech", is_moyenne=True, all_labels=TECH_LABELS, ncols=2)
+
+            st.divider()
             cg, ct = st.columns(2)
             with cg:
-                gps_sel_moy = st.multiselect(
+                st.multiselect(
                     "Métriques GPS", list(GPS_LABELS.keys()),
                     default=GPS_DEFAULTS, key="j_gps_moy",
                 )
             with ct:
-                tech_sel_moy = st.multiselect(
+                st.multiselect(
                     "Métriques Technique", list(TECH_LABELS.keys()),
                     default=TECH_DEFAULTS, key="j_tech_moy",
                 )
-
-            render_kpis_section(stats, gps_sel_moy,  "GPS",       "section-gps",  is_moyenne=True, all_labels=GPS_LABELS)
-            render_kpis_section(stats, tech_sel_moy, "Technique", "section-tech", is_moyenne=True, all_labels=TECH_LABELS)
-
-            st.divider()
-            render_radar(stats, gps_sel_moy + tech_sel_moy, team_max)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
