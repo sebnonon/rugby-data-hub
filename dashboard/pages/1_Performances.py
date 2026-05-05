@@ -33,12 +33,12 @@ st.markdown("""
     [data-testid="stMetric"] {
         background-color: #ffffff;
         border: 1px solid #c0d8ea;
-        border-radius: 10px;
-        padding: 18px 20px;
+        border-radius: 8px;
+        padding: 8px 12px;
     }
     [data-testid="stMetricLabel"] {
         color: #2a6080;
-        font-size: 0.8rem;
+        font-size: 0.7rem;
         text-transform: uppercase;
         letter-spacing: 0.6px;
         font-weight: 700;
@@ -46,7 +46,7 @@ st.markdown("""
     [data-testid="stMetricValue"] {
         color: #071626;
         font-weight: 800;
-        font-size: 1.65rem !important;
+        font-size: 1rem !important;
         white-space: nowrap;
     }
 
@@ -539,8 +539,8 @@ with tab_joueur:
             with col_radar:
                 render_radar(row, gps_sel + tech_sel, team_max)
             with col_kpis:
-                render_kpis_section(row, gps_sel,  "GPS",       "section-gps",  all_labels=GPS_LABELS,  ncols=2)
-                render_kpis_section(row, tech_sel, "Technique", "section-tech", all_labels=TECH_LABELS, ncols=2)
+                render_kpis_section(row, gps_sel,  "GPS",       "section-gps",  all_labels=GPS_LABELS,  ncols=3)
+                render_kpis_section(row, tech_sel, "Technique", "section-tech", all_labels=TECH_LABELS, ncols=3)
 
             st.divider()
             cg, ct = st.columns(2)
@@ -573,8 +573,8 @@ with tab_joueur:
             with col_radar:
                 render_radar(stats, gps_sel + tech_sel, team_max)
             with col_kpis:
-                render_kpis_section(stats, gps_sel,  "GPS",       "section-gps",  is_moyenne=True, all_labels=GPS_LABELS,  ncols=2)
-                render_kpis_section(stats, tech_sel, "Technique", "section-tech", is_moyenne=True, all_labels=TECH_LABELS, ncols=2)
+                render_kpis_section(stats, gps_sel,  "GPS",       "section-gps",  is_moyenne=True, all_labels=GPS_LABELS,  ncols=3)
+                render_kpis_section(stats, tech_sel, "Technique", "section-tech", is_moyenne=True, all_labels=TECH_LABELS, ncols=3)
 
             st.divider()
             cg, ct = st.columns(2)
