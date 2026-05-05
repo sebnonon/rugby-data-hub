@@ -350,7 +350,7 @@ def compute_moyenne(df_joueur: pd.DataFrame) -> dict:
     return result
 
 
-def render_radar(vals: dict, selected_labels: list, team_ref: pd.Series):
+def render_radar(vals: dict, selected_labels: list, team_ref: pd.Series, team_med: pd.Series | None = None):
     if len(selected_labels) < 3:
         st.info("Sélectionne au moins 3 métriques pour afficher le radar.")
         return
@@ -375,12 +375,36 @@ def render_radar(vals: dict, selected_labels: list, team_ref: pd.Series):
     r_plot = vals_norm + [vals_norm[0]]
     t_plot = vals_txt  + [vals_txt[0]]
 
-    fig = go.Figure(go.Scatterpolar(
+    fig = go.Figure()
+
+    # Contour médiane équipe
+    if team_med is not None:
+        med_norm, med_txt = [], []
+        for col in cols_r:
+            ref = float(team_ref.get(col, 0) or 0)
+            m = float(team_med.get(col, 0) or 0)
+            if ref > 0:
+                med_norm.append(min(round(m / ref * 100, 1), 110))
+                med_txt.append(f"{m:.1f}")
+            else:
+                med_norm.append(0)
+                med_txt.append("—")
+        fig.add_trace(go.Scatterpolar(
+            r=med_norm + [med_norm[0]], theta=theta,
+            fill="none",
+            line=dict(color="#aaaaaa", width=1.5, dash="dot"),
+            text=med_txt + [med_txt[0]],
+            name="Médiane équipe",
+            hovertemplate="%{theta} : %{text}<extra>Médiane</extra>",
+        ))
+
+    fig.add_trace(go.Scatterpolar(
         r=r_plot, theta=theta,
         fill="toself",
         fillcolor="rgba(10,122,176,0.10)",
         line=dict(color="#0a7ab0", width=2.5),
         text=t_plot,
+        name="Joueur",
         hovertemplate="%{theta} : %{text}<extra></extra>",
     ))
     fig.update_layout(
@@ -399,12 +423,16 @@ def render_radar(vals: dict, selected_labels: list, team_ref: pd.Series):
         ),
         paper_bgcolor="#f0f6fb",
         font_color="#1a3a5c",
-        height=380,
-        margin=dict(t=30, b=30, l=80, r=80),
-        showlegend=False,
+        height=580,
+        margin=dict(t=30, b=50, l=80, r=80),
+        showlegend=team_med is not None,
+        legend=dict(
+            orientation="h", y=-0.1,
+            font=dict(color="#1a3a5c", size=11),
+            title=dict(text="Normalisé sur 100 (100 = max équipe) —", font=dict(size=10, color="#5a8aaa")),
+        ),
     )
     st.plotly_chart(fig, use_container_width=True)
-    st.caption("Normalisé sur 100 — 100 = meilleure performance de l'équipe sur la saison")
 
 
 def section(label, css_class):
@@ -498,6 +526,8 @@ with tab_joueur:
     matchs_labels = df_joueur.sort_values("date", ascending=False)["label_match"].tolist()
 
     _poste_raw = df_joueur["poste"].dropna().iloc[0] if not df_joueur.empty and df_joueur["poste"].notna().any() else None
+    _df_poste = df_all[df_all["poste"] == _poste_raw] if _poste_raw else df_all
+    poste_median = _df_poste[_radar_cols].median()
     _poste = str(_poste_raw) if _poste_raw else "—"
 
     if vue == "🏉 Match":
@@ -578,9 +608,9 @@ with tab_joueur:
             gps_sel = st.session_state.get("j_gps_match", GPS_DEFAULTS)
             tech_sel = st.session_state.get("j_tech_match", TECH_DEFAULTS)
 
-            col_radar, col_kpis = st.columns([5, 4], gap="medium")
+            col_radar, col_kpis = st.columns([7, 4], gap="medium")
             with col_radar:
-                render_radar(row, gps_sel + tech_sel, team_max)
+                render_radar(row, gps_sel + tech_sel, team_max, poste_median)
             with col_kpis:
                 render_kpis_section(row, gps_sel,  "GPS",       "section-gps",  all_labels=GPS_LABELS,  ncols=3)
                 render_kpis_section(row, tech_sel, "Technique", "section-tech", all_labels=TECH_LABELS, ncols=3)
@@ -612,9 +642,9 @@ with tab_joueur:
             gps_sel = st.session_state.get("j_gps_moy", GPS_DEFAULTS)
             tech_sel = st.session_state.get("j_tech_moy", TECH_DEFAULTS)
 
-            col_radar, col_kpis = st.columns([5, 4], gap="medium")
+            col_radar, col_kpis = st.columns([7, 4], gap="medium")
             with col_radar:
-                render_radar(stats, gps_sel + tech_sel, team_max)
+                render_radar(stats, gps_sel + tech_sel, team_max, poste_median)
             with col_kpis:
                 render_kpis_section(stats, gps_sel,  "GPS",       "section-gps",  is_moyenne=True, all_labels=GPS_LABELS,  ncols=3)
                 render_kpis_section(stats, tech_sel, "Technique", "section-tech", is_moyenne=True, all_labels=TECH_LABELS, ncols=3)
