@@ -394,8 +394,8 @@ def render_radar(vals: dict, selected_labels: list, team_ref: pd.Series, team_me
             fill="none",
             line=dict(color="#aaaaaa", width=1.5, dash="dot"),
             text=med_txt + [med_txt[0]],
-            name="Médiane équipe",
-            hovertemplate="%{theta} : %{text}<extra>Médiane</extra>",
+            name="Médiane poste",
+            hovertemplate="%{theta} : %{text}<extra>Médiane poste</extra>",
         ))
 
     fig.add_trace(go.Scatterpolar(
