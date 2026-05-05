@@ -472,7 +472,7 @@ tab_joueur, tab_compare = st.tabs(["📊 Joueur", "⚖️ Comparaison"])
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_joueur:
     # ── Ligne du haut : sélecteurs + encadrés ─────────────────────────────────
-    c1, c2, c_j, c_s, c_t, c_p = st.columns([2.5, 3.5, 1.1, 1.5, 1.3, 1.3], gap="small")
+    c1, c2, c_j, c_s, c_t, c_p = st.columns([1.8, 2.5, 1.3, 1.6, 1.5, 1.3], gap="small")
 
     with c1:
         joueur_label = st.selectbox("Joueur", joueur_labels, key="j_joueur")
