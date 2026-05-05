@@ -24,11 +24,11 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    .stApp { background-color: #f0f6fb; color: #071626; zoom: 0.9; }
-    @media (max-width: 1280px) { .stApp { zoom: 0.75; } }
-    @media (min-width: 1281px) and (max-width: 1600px) { .stApp { zoom: 0.85; } }
-    @media (min-width: 1601px) and (max-width: 1920px) { .stApp { zoom: 0.9; } }
-    @media (min-width: 1921px) { .stApp { zoom: 1.0; } }
+    .stApp { background-color: #f0f6fb; color: #071626; }
+    @media (max-width: 1280px) { .block-container { zoom: 0.85; } }
+    @media (min-width: 1281px) and (max-width: 1600px) { .block-container { zoom: 0.95; } }
+    @media (min-width: 1601px) and (max-width: 1920px) { .block-container { zoom: 1.0; } }
+    @media (min-width: 1921px) { .block-container { zoom: 1.1; } }
     [data-testid="stSidebar"] { background-color: #ffffff; }
     h1 { color: #071626; font-weight: 800; letter-spacing: 1px; }
     h2, h3 { color: #1a3a5c; }
