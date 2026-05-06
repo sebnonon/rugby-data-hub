@@ -824,15 +824,13 @@ with tab_compare:
             def _get_vals(joueur_nom):
                 return stats_map.get(joueur_nom, {}), True
 
-        _cols_ok = all(c in df_all_c.columns for c in cols_r)
+        _cols_ok     = all(c in df_all_c.columns for c in cols_r)
+        _med_label_c = "Médiane équipe"
         if vue == "🏉 Match":
             _df_mid_c = df_all_c[df_all_c["match_id"] == mid_c] if mid_c else df_all_c
             med_c     = _df_mid_c[cols_r].median() if _cols_ok else pd.Series(dtype=float)
-            _med_label_c = "Médiane match"
         else:
-            df_poste_c   = df_all_c[df_all_c["poste"].isin(postes_c)] if postes_c else df_all_c
-            med_c        = compute_poste_median_moy(df_poste_c, cols_r) if _cols_ok else pd.Series(dtype=float)
-            _med_label_c = "Médiane poste"
+            med_c = compute_poste_median_moy(df_all_c, cols_r) if _cols_ok else pd.Series(dtype=float)
 
         fig = go.Figure()
         theta = metriques_sel + [metriques_sel[0]]
