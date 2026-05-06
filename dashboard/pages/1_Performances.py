@@ -810,66 +810,62 @@ with tab_compare:
         df_poste_c = df_all_c[df_all_c["poste"].isin(postes_c)] if postes_c else df_all_c
         med_c = df_poste_c[cols_r].median() if all(c in df_all_c.columns for c in cols_r) else pd.Series()
 
-        col_radar_c, col_kpis_c = st.columns([7, 4], gap="medium")
+        fig = go.Figure()
+        theta = metriques_sel + [metriques_sel[0]]
 
-        with col_radar_c:
-            fig = go.Figure()
-            theta = metriques_sel + [metriques_sel[0]]
+        if not med_c.empty:
+            vals_med = [min(float(med_c.get(c, 0) or 0) / max_eq.get(c, 1) * 100, 100) for c in cols_r]
+            fig.add_trace(go.Scatterpolar(
+                r=vals_med + [vals_med[0]], theta=theta,
+                name="Médiane poste",
+                text=[f"{float(med_c.get(c,0) or 0):.1f}" for c in cols_r] + [f"{float(med_c.get(cols_r[0],0) or 0):.1f}"],
+                hovertemplate="%{theta} : %{text}<extra>Médiane poste</extra>",
+                line=dict(color="#aaaaaa", width=1.5, dash="dot"), fill="none",
+            ))
 
-            if not med_c.empty:
-                vals_med = [min(float(med_c.get(c, 0) or 0) / max_eq.get(c, 1) * 100, 100) for c in cols_r]
-                fig.add_trace(go.Scatterpolar(
-                    r=vals_med + [vals_med[0]], theta=theta,
-                    name="Médiane poste",
-                    text=[f"{float(med_c.get(c,0) or 0):.1f}" for c in cols_r] + [f"{float(med_c.get(cols_r[0],0) or 0):.1f}"],
-                    hovertemplate="%{theta} : %{text}<extra>Médiane poste</extra>",
-                    line=dict(color="#aaaaaa", width=1.5, dash="dot"), fill="none",
-                ))
+        for i, joueur_nom in enumerate(joueurs_sel_c):
+            row_dict, _ = _get_vals(joueur_nom)
+            if not row_dict:
+                continue
+            vals_raw = [float(row_dict.get(c, 0) or 0) for c in cols_r]
+            vals     = [min(v / max_eq.get(c, 1) * 100, 100) if max_eq.get(c, 1) > 0 else 0 for v, c in zip(vals_raw, cols_r)]
+            color    = RADAR_COLORS[i % len(RADAR_COLORS)]
+            r, g, b  = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+            fig.add_trace(go.Scatterpolar(
+                r=vals + [vals[0]], theta=theta,
+                name=joueurs_labels_sel[i],
+                text=[f"{v:.1f}" for v in vals_raw] + [f"{vals_raw[0]:.1f}"],
+                hovertemplate="%{theta} : %{text}<extra>%{fullData.name}</extra>",
+                line=dict(color=color, width=2),
+                fill="toself", fillcolor=f"rgba({r},{g},{b},0.15)",
+            ))
 
-            for i, joueur_nom in enumerate(joueurs_sel_c):
-                row_dict, _ = _get_vals(joueur_nom)
-                if not row_dict:
-                    continue
-                vals_raw = [float(row_dict.get(c, 0) or 0) for c in cols_r]
-                vals     = [min(v / max_eq.get(c, 1) * 100, 100) if max_eq.get(c, 1) > 0 else 0 for v, c in zip(vals_raw, cols_r)]
-                color    = RADAR_COLORS[i % len(RADAR_COLORS)]
-                r, g, b  = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
-                fig.add_trace(go.Scatterpolar(
-                    r=vals + [vals[0]], theta=theta,
-                    name=joueurs_labels_sel[i],
-                    text=[f"{v:.1f}" for v in vals_raw] + [f"{vals_raw[0]:.1f}"],
-                    hovertemplate="%{theta} : %{text}<extra>%{fullData.name}</extra>",
-                    line=dict(color=color, width=2),
-                    fill="toself", fillcolor=f"rgba({r},{g},{b},0.15)",
-                ))
+        fig.update_layout(
+            polar=dict(
+                bgcolor="#ffffff",
+                radialaxis=dict(visible=True, range=[0, 100], tickvals=[25, 50, 75, 100],
+                                tickfont=dict(color="#8ab4c8", size=9), gridcolor="#c0d8ea", linecolor="#c0d8ea"),
+                angularaxis=dict(tickfont=dict(color="#1a3a5c", size=11), gridcolor="#c0d8ea", linecolor="#333"),
+            ),
+            paper_bgcolor="#f0f6fb", font_color="#1a3a5c",
+            legend=dict(orientation="h", y=-0.1, font=dict(color="#1a3a5c", size=11),
+                        title=dict(text="Normalisé sur 100 (100 = max équipe) —", font=dict(size=10, color="#5a8aaa"))),
+            height=580, margin=dict(t=30, b=80, l=80, r=80),
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
-            fig.update_layout(
-                polar=dict(
-                    bgcolor="#ffffff",
-                    radialaxis=dict(visible=True, range=[0, 100], tickvals=[25, 50, 75, 100],
-                                    tickfont=dict(color="#8ab4c8", size=9), gridcolor="#c0d8ea", linecolor="#c0d8ea"),
-                    angularaxis=dict(tickfont=dict(color="#1a3a5c", size=11), gridcolor="#c0d8ea", linecolor="#333"),
-                ),
-                paper_bgcolor="#f0f6fb", font_color="#1a3a5c",
-                legend=dict(orientation="h", y=-0.1, font=dict(color="#1a3a5c", size=11),
-                            title=dict(text="Normalisé sur 100 (100 = max équipe) —", font=dict(size=10, color="#5a8aaa"))),
-                height=580, margin=dict(t=30, b=80, l=80, r=80),
+        for i, joueur_nom in enumerate(joueurs_sel_c):
+            row_dict, is_moy = _get_vals(joueur_nom)
+            if not row_dict:
+                continue
+            color = RADAR_COLORS[i % len(RADAR_COLORS)]
+            st.markdown(
+                f'<p style="font-weight:700; font-size:0.85rem; color:{color}; margin:8px 0 2px 0;">'
+                f'{joueurs_labels_sel[i]}</p>',
+                unsafe_allow_html=True,
             )
-            st.plotly_chart(fig, use_container_width=True)
-
-        with col_kpis_c:
-            for i, joueur_nom in enumerate(joueurs_sel_c):
-                row_dict, is_moy = _get_vals(joueur_nom)
-                if not row_dict:
-                    continue
-                color = RADAR_COLORS[i % len(RADAR_COLORS)]
-                st.markdown(
-                    f'<p style="font-weight:700; font-size:0.85rem; color:{color}; margin:8px 0 2px 0;">'
-                    f'{joueurs_labels_sel[i]}</p>',
-                    unsafe_allow_html=True,
-                )
-                render_kpis_section(row_dict, gps_sel_c,  "GPS",       "section-gps",  is_moyenne=is_moy, all_labels=GPS_LABELS,  ncols=3)
-                render_kpis_section(row_dict, tech_sel_c, "Technique", "section-tech", is_moyenne=is_moy, all_labels=TECH_LABELS, ncols=3)
+            render_kpis_section(row_dict, gps_sel_c,  "GPS",       "section-gps",  is_moyenne=is_moy, all_labels=GPS_LABELS,  ncols=3)
+            render_kpis_section(row_dict, tech_sel_c, "Technique", "section-tech", is_moyenne=is_moy, all_labels=TECH_LABELS, ncols=3)
 
         st.divider()
         cg_c, ct_c = st.columns(2)
