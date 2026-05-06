@@ -15,7 +15,7 @@ from parsers import PARSERS
 from supabase_client import get_client
 
 st.set_page_config(
-    page_title="Rugby Data Hub — Import / Export",
+    page_title="Rugby Data Hub",
     page_icon=Image.open(Path(__file__).parent.parent / "logo.jpg") if (Path(__file__).parent.parent / "logo.jpg").exists() else "🏉",
     layout="wide",
 )
