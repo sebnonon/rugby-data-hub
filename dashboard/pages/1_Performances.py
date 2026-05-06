@@ -864,8 +864,20 @@ with tab_compare:
                 f'{joueurs_labels_sel[i]}</p>',
                 unsafe_allow_html=True,
             )
-            render_kpis_section(row_dict, gps_sel_c,  "GPS",       "section-gps",  is_moyenne=is_moy, all_labels=GPS_LABELS,  ncols=3)
-            render_kpis_section(row_dict, tech_sel_c, "Technique", "section-tech", is_moyenne=is_moy, all_labels=TECH_LABELS, ncols=3)
+            _all_sel = [m for m in (gps_sel_c + tech_sel_c) if all_labels_c.get(m)]
+            _ncols   = max((len(_all_sel) + 1) // 2, 1)
+            for _i in range(0, len(_all_sel), _ncols):
+                _chunk = _all_sel[_i:_i + _ncols]
+                _cols  = st.columns(len(_chunk))
+                for _j, _lbl in enumerate(_chunk):
+                    _col  = all_labels_c.get(_lbl)
+                    _meta = METRIC_META.get(_col, {"label": _lbl, "suffix": "", "decimals": 0})
+                    _d    = 1 if is_moy else _meta.get("decimals", 0)
+                    if "pct_col" in _meta:
+                        _val = pct_label(row_dict.get(_col), row_dict.get(_meta["pct_col"]), decimals=_d)
+                    else:
+                        _val = fmt(row_dict.get(_col), decimals=_d, suffix=_meta.get("suffix", ""))
+                    _cols[_j].metric(_meta["label"], _val)
 
         st.divider()
         cg_c, ct_c = st.columns(2)
