@@ -248,6 +248,10 @@ SOURCES_CMP = {
     "Entraînements":          ("entr",  METRIQUES_ENTR_CMP),
 }
 
+def _get_saison(d):
+    return f"{d.year}/{d.year+1}" if d.month >= 8 else f"{d.year-1}/{d.year}"
+
+
 RADAR_COLORS = [
     "#56B4E9", "#E69F00", "#009E73", "#CC79A7",
     "#F0E442", "#D55E00", "#0072B2", "#7FDBFF",
@@ -574,8 +578,6 @@ with tab_joueur:
         c_p.metric("Poste", _poste)
 
     else:  # Vue Moyenne
-        def _get_saison(d):
-            return f"{d.year}/{d.year+1}" if d.month >= 8 else f"{d.year-1}/{d.year}"
 
         if not df_joueur.empty:
             df_joueur["saison"] = df_joueur["date"].apply(_get_saison)
@@ -679,52 +681,81 @@ with tab_joueur:
 with tab_compare:
     df_src_c = load_match_cmp()
 
-    def _match_label_c(row):
-        date_str = row["date"].strftime("%d/%m/%y")
-        adv = row.get("adversaire_complet") or row.get("adversaire") or "?"
-        return f"{adv} · {date_str}"
-
-    matchs_ref_c = (
-        df_src_c[["match_id", "date", "adversaire", "adversaire_complet", "journee", "score_rec", "score_adv"]]
-        .drop_duplicates("match_id")
-        .dropna(subset=["date"])
-        .sort_values("date", ascending=False)
-    )
-    matchs_ref_c["label"] = matchs_ref_c.apply(_match_label_c, axis=1)
-    matchs_labels_c = matchs_ref_c["label"].tolist()
-    label_to_mid_c  = dict(zip(matchs_ref_c["label"], matchs_ref_c["match_id"]))
-
-    # ── Ligne du haut : match + Journée + Score ────────────────────────────────
-    c_mc, c_jc, c_sc = st.columns([6, 1.5, 1.5], gap="small")
-    with c_mc:
-        match_sel_c = st.selectbox("Match", matchs_labels_c if matchs_labels_c else ["—"], key="cp_match")
-
-    mid_c = label_to_mid_c.get(match_sel_c)
-    if mid_c:
-        _mref = matchs_ref_c[matchs_ref_c["match_id"] == mid_c].iloc[0]
-        _j = _mref.get("journee")
-        try:
-            _journee_c = f"J{int(_j)}" if pd.notna(_j) else "—"
-        except (TypeError, ValueError):
-            _journee_c = "—"
-        sr, sa = _mref.get("score_rec"), _mref.get("score_adv")
-        try:
-            _score_c = f"{int(sr)} — {int(sa)}" if (pd.notna(sr) and pd.notna(sa)) else "—"
-        except (TypeError, ValueError):
-            _score_c = "—"
-    else:
-        _journee_c = _score_c = "—"
-
-    c_jc.metric("Journée", _journee_c)
-    c_sc.metric("Score", _score_c)
-
-    df_match_c = df_src_c[df_src_c["match_id"] == mid_c] if mid_c else df_src_c
-
-    # ── Sélection joueurs ──────────────────────────────────────────────────────
     def _joueur_label_cmp(row):
         return f"{row['prenom']} {row['nom']}" if pd.notna(row.get("prenom")) else row["nom"]
 
-    df_j_ref_c = df_match_c[["nom", "prenom"]].drop_duplicates().dropna(subset=["nom"]).sort_values("nom")
+    avail_gps  = [k for k in GPS_LABELS  if GPS_LABELS[k]  in df_src_c.columns]
+    avail_tech = [k for k in TECH_LABELS if TECH_LABELS[k] in df_src_c.columns]
+
+    # ── Ligne du haut selon le mode ───────────────────────────────────────────
+    if vue == "🏉 Match":
+        def _match_label_c(row):
+            adv = row.get("adversaire_complet") or row.get("adversaire") or "?"
+            return f"{adv} · {row['date'].strftime('%d/%m/%y')}"
+
+        matchs_ref_c = (
+            df_src_c[["match_id", "date", "adversaire", "adversaire_complet", "journee", "score_rec", "score_adv"]]
+            .drop_duplicates("match_id").dropna(subset=["date"]).sort_values("date", ascending=False)
+        )
+        matchs_ref_c["label"] = matchs_ref_c.apply(_match_label_c, axis=1)
+        matchs_labels_c = matchs_ref_c["label"].tolist()
+        label_to_mid_c  = dict(zip(matchs_ref_c["label"], matchs_ref_c["match_id"]))
+
+        c_mc, c_jc, c_sc = st.columns([6, 1.5, 1.5], gap="small")
+        with c_mc:
+            match_sel_c = st.selectbox("Match", matchs_labels_c if matchs_labels_c else ["—"], key="cp_match")
+
+        mid_c = label_to_mid_c.get(match_sel_c)
+        if mid_c:
+            _mref = matchs_ref_c[matchs_ref_c["match_id"] == mid_c].iloc[0]
+            _j = _mref.get("journee")
+            try:
+                _journee_c = f"J{int(_j)}" if pd.notna(_j) else "—"
+            except (TypeError, ValueError):
+                _journee_c = "—"
+            sr, sa = _mref.get("score_rec"), _mref.get("score_adv")
+            try:
+                _score_c = f"{int(sr)} — {int(sa)}" if (pd.notna(sr) and pd.notna(sa)) else "—"
+            except (TypeError, ValueError):
+                _score_c = "—"
+        else:
+            _journee_c = _score_c = "—"
+        c_jc.metric("Journée", _journee_c)
+        c_sc.metric("Score", _score_c)
+
+        df_cmp = df_src_c[df_src_c["match_id"] == mid_c] if mid_c else df_src_c
+        key_joueurs = f"cp_joueurs_{mid_c}"
+
+    else:  # Moyenne
+        df_src_c["saison"] = df_src_c["date"].apply(_get_saison)
+        saisons_all_c = sorted(df_src_c["saison"].dropna().unique(), reverse=True)
+
+        c_sais_c, c_date_c = st.columns([2, 7], gap="small")
+        with c_sais_c:
+            saison_sel_c = st.selectbox("Saison", ["Toutes"] + saisons_all_c, key="cp_saison")
+
+        df_fil_c = df_src_c if saison_sel_c == "Toutes" else df_src_c[df_src_c["saison"] == saison_sel_c]
+        dates_dispo_c = sorted(df_fil_c["date"].dt.date.unique()) if not df_fil_c.empty else [pd.Timestamp.today().date()]
+
+        with c_date_c:
+            date_range_c = st.select_slider(
+                "Période", options=dates_dispo_c,
+                value=(dates_dispo_c[0], dates_dispo_c[-1]),
+                format_func=lambda d: d.strftime("%d/%m/%y"),
+                key=f"cp_date_{saison_sel_c}",
+            )
+
+        if len(date_range_c) == 2:
+            df_cmp = df_fil_c[
+                (df_fil_c["date"].dt.date >= date_range_c[0]) &
+                (df_fil_c["date"].dt.date <= date_range_c[1])
+            ]
+        else:
+            df_cmp = df_fil_c
+        key_joueurs = f"cp_joueurs_moy_{saison_sel_c}"
+
+    # ── Sélection joueurs ──────────────────────────────────────────────────────
+    df_j_ref_c = df_cmp[["nom", "prenom"]].drop_duplicates().dropna(subset=["nom"]).sort_values("nom")
     df_j_ref_c["label"] = df_j_ref_c.apply(_joueur_label_cmp, axis=1)
     joueurs_dispo_c = df_j_ref_c["label"].tolist()
     label_to_nom_c  = dict(zip(df_j_ref_c["label"], df_j_ref_c["nom"]))
@@ -732,17 +763,16 @@ with tab_compare:
     joueurs_labels_sel = st.multiselect(
         "Joueurs à comparer", joueurs_dispo_c,
         default=joueurs_dispo_c[:3] if len(joueurs_dispo_c) >= 3 else joueurs_dispo_c,
-        max_selections=8, key=f"cp_joueurs_{mid_c}",
+        max_selections=8, key=key_joueurs,
     )
     joueurs_sel_c = [label_to_nom_c[l] for l in joueurs_labels_sel]
 
-    avail_gps  = [k for k in GPS_LABELS  if GPS_LABELS[k]  in df_match_c.columns]
-    avail_tech = [k for k in TECH_LABELS if TECH_LABELS[k] in df_match_c.columns]
+    # ── Métriques (lues depuis session_state, widgets placés en bas) ───────────
     gps_sel_c  = st.session_state.get("cp_gps",  avail_gps)
     tech_sel_c = st.session_state.get("cp_tech", TECH_DEFAULTS if avail_tech else [])
 
     all_labels_c  = {**GPS_LABELS, **TECH_LABELS}
-    metriques_sel = [m for m in (gps_sel_c + tech_sel_c) if all_labels_c.get(m) in df_match_c.columns]
+    metriques_sel = [m for m in (gps_sel_c + tech_sel_c) if all_labels_c.get(m) in df_src_c.columns]
     cols_r        = [all_labels_c[m] for m in metriques_sel]
 
     if not joueurs_sel_c:
@@ -750,17 +780,35 @@ with tab_compare:
     elif len(metriques_sel) < 3:
         st.info("Sélectionne au moins 3 métriques.")
     else:
-        df_r   = df_match_c[df_match_c["nom"].isin(joueurs_sel_c)].copy()
-        df_idx = df_r.set_index("nom")
-
-        # Max équipe (tous matchs) pour la normalisation
         df_all_c = load_match_cmp()
         max_eq   = {col: df_all_c[col].max() for col in cols_r if col in df_all_c.columns}
 
-        # Médiane par poste (tous matchs)
-        postes_sel_c = df_r["poste"].dropna().unique() if "poste" in df_r.columns else []
-        df_poste_c   = df_all_c[df_all_c["poste"].isin(postes_sel_c)] if len(postes_sel_c) else df_all_c
-        med_c        = df_poste_c[cols_r].median() if all(c in df_all_c.columns for c in cols_r) else pd.Series()
+        # Données par joueur selon le mode
+        if vue == "🏉 Match":
+            df_r   = df_cmp[df_cmp["nom"].isin(joueurs_sel_c)].copy()
+            df_idx = df_r.set_index("nom")
+            postes_c = df_r["poste"].dropna().unique().tolist() if "poste" in df_r.columns else []
+            def _get_vals(joueur_nom):
+                if joueur_nom not in df_idx.index:
+                    return None, None
+                row_j = df_idx.loc[joueur_nom]
+                if isinstance(row_j, pd.DataFrame):
+                    row_j = row_j.iloc[0]
+                return row_j.to_dict(), False
+        else:
+            stats_map = {}
+            postes_c  = []
+            for jn in joueurs_sel_c:
+                df_j = df_cmp[df_cmp["nom"] == jn]
+                stats_map[jn] = compute_moyenne(df_j)
+                p = df_j["poste"].dropna().iloc[0] if not df_j.empty and df_j["poste"].notna().any() else None
+                if p and p not in postes_c:
+                    postes_c.append(p)
+            def _get_vals(joueur_nom):
+                return stats_map.get(joueur_nom, {}), True
+
+        df_poste_c = df_all_c[df_all_c["poste"].isin(postes_c)] if postes_c else df_all_c
+        med_c = df_poste_c[cols_r].median() if all(c in df_all_c.columns for c in cols_r) else pd.Series()
 
         col_radar_c, col_kpis_c = st.columns([7, 4], gap="medium")
 
@@ -769,24 +817,20 @@ with tab_compare:
             theta = metriques_sel + [metriques_sel[0]]
 
             if not med_c.empty:
-                vals_med     = [min(float(med_c.get(c, 0) or 0) / max_eq.get(c, 1) * 100, 100) for c in cols_r]
-                vals_med_txt = [f"{float(med_c.get(c, 0) or 0):.1f}" for c in cols_r]
+                vals_med = [min(float(med_c.get(c, 0) or 0) / max_eq.get(c, 1) * 100, 100) for c in cols_r]
                 fig.add_trace(go.Scatterpolar(
                     r=vals_med + [vals_med[0]], theta=theta,
                     name="Médiane poste",
-                    text=vals_med_txt + [vals_med_txt[0]],
+                    text=[f"{float(med_c.get(c,0) or 0):.1f}" for c in cols_r] + [f"{float(med_c.get(cols_r[0],0) or 0):.1f}"],
                     hovertemplate="%{theta} : %{text}<extra>Médiane poste</extra>",
-                    line=dict(color="#aaaaaa", width=1.5, dash="dot"),
-                    fill="none",
+                    line=dict(color="#aaaaaa", width=1.5, dash="dot"), fill="none",
                 ))
 
             for i, joueur_nom in enumerate(joueurs_sel_c):
-                if joueur_nom not in df_idx.index:
+                row_dict, _ = _get_vals(joueur_nom)
+                if not row_dict:
                     continue
-                row_j = df_idx.loc[joueur_nom]
-                if isinstance(row_j, pd.DataFrame):
-                    row_j = row_j.iloc[0]
-                vals_raw = [float(row_j[c]) if c in row_j.index and pd.notna(row_j[c]) else 0 for c in cols_r]
+                vals_raw = [float(row_dict.get(c, 0) or 0) for c in cols_r]
                 vals     = [min(v / max_eq.get(c, 1) * 100, 100) if max_eq.get(c, 1) > 0 else 0 for v, c in zip(vals_raw, cols_r)]
                 color    = RADAR_COLORS[i % len(RADAR_COLORS)]
                 r, g, b  = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
@@ -806,31 +850,26 @@ with tab_compare:
                                     tickfont=dict(color="#8ab4c8", size=9), gridcolor="#c0d8ea", linecolor="#c0d8ea"),
                     angularaxis=dict(tickfont=dict(color="#1a3a5c", size=11), gridcolor="#c0d8ea", linecolor="#333"),
                 ),
-                paper_bgcolor="#f0f6fb",
-                font_color="#1a3a5c",
+                paper_bgcolor="#f0f6fb", font_color="#1a3a5c",
                 legend=dict(orientation="h", y=-0.1, font=dict(color="#1a3a5c", size=11),
                             title=dict(text="Normalisé sur 100 (100 = max équipe) —", font=dict(size=10, color="#5a8aaa"))),
-                height=580,
-                margin=dict(t=30, b=80, l=80, r=80),
+                height=580, margin=dict(t=30, b=80, l=80, r=80),
             )
             st.plotly_chart(fig, use_container_width=True)
 
         with col_kpis_c:
             for i, joueur_nom in enumerate(joueurs_sel_c):
-                if joueur_nom not in df_idx.index:
+                row_dict, is_moy = _get_vals(joueur_nom)
+                if not row_dict:
                     continue
-                row_j = df_idx.loc[joueur_nom]
-                if isinstance(row_j, pd.DataFrame):
-                    row_j = row_j.iloc[0]
                 color = RADAR_COLORS[i % len(RADAR_COLORS)]
                 st.markdown(
                     f'<p style="font-weight:700; font-size:0.85rem; color:{color}; margin:8px 0 2px 0;">'
                     f'{joueurs_labels_sel[i]}</p>',
                     unsafe_allow_html=True,
                 )
-                row_dict = row_j.to_dict()
-                render_kpis_section(row_dict, gps_sel_c,  "GPS",       "section-gps",  all_labels=GPS_LABELS,  ncols=3)
-                render_kpis_section(row_dict, tech_sel_c, "Technique", "section-tech", all_labels=TECH_LABELS, ncols=3)
+                render_kpis_section(row_dict, gps_sel_c,  "GPS",       "section-gps",  is_moyenne=is_moy, all_labels=GPS_LABELS,  ncols=3)
+                render_kpis_section(row_dict, tech_sel_c, "Technique", "section-tech", is_moyenne=is_moy, all_labels=TECH_LABELS, ncols=3)
 
         st.divider()
         cg_c, ct_c = st.columns(2)
