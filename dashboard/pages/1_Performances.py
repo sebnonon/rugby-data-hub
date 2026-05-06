@@ -375,7 +375,7 @@ def compute_poste_median_moy(df_poste: pd.DataFrame, cols: list) -> pd.Series:
     return pd.DataFrame(avg_rows).median()
 
 
-def render_radar(vals: dict, selected_labels: list, team_ref: pd.Series, team_med: pd.Series | None = None):
+def render_radar(vals: dict, selected_labels: list, team_ref: pd.Series, team_med: pd.Series | None = None, med_label: str = "Médiane poste"):
     if len(selected_labels) < 3:
         st.info("Sélectionne au moins 3 métriques pour afficher le radar.")
         return
@@ -419,8 +419,8 @@ def render_radar(vals: dict, selected_labels: list, team_ref: pd.Series, team_me
             fill="none",
             line=dict(color="#aaaaaa", width=1.5, dash="dot"),
             text=med_txt + [med_txt[0]],
-            name="Médiane poste",
-            hovertemplate="%{theta} : %{text}<extra>Médiane poste</extra>",
+            name=med_label,
+            hovertemplate="%{theta} : %{text}<extra>" + med_label + "</extra>",
         ))
 
     fig.add_trace(go.Scatterpolar(
@@ -553,7 +553,7 @@ with tab_joueur:
     _poste_raw = df_joueur["poste"].dropna().iloc[0] if not df_joueur.empty and df_joueur["poste"].notna().any() else None
     _df_poste = df_all[df_all["poste"] == _poste_raw] if _poste_raw else df_all
     if vue == "🏉 Match":
-        poste_median = _df_poste[_radar_cols].median()
+        poste_median = None  # calculé après sélection du match
     else:
         poste_median = compute_poste_median_moy(_df_poste, _radar_cols)
     _poste = str(_poste_raw) if _poste_raw else "—"
@@ -629,14 +629,17 @@ with tab_joueur:
         if df_joueur.empty or not matchs_labels:
             st.info("Aucune donnée disponible pour ce joueur.")
         else:
-            row = df_joueur[df_joueur["label_match"] == match_sel].iloc[0].to_dict()
+            _row_sel = df_joueur[df_joueur["label_match"] == match_sel].iloc[0]
+            row = _row_sel.to_dict()
+            _mid_j = _row_sel["match_id"]
+            poste_median = df_all[df_all["match_id"] == _mid_j][_radar_cols].median()
 
             gps_sel = st.session_state.get("j_gps_match", GPS_DEFAULTS)
             tech_sel = st.session_state.get("j_tech_match", TECH_DEFAULTS)
 
             col_radar, col_kpis = st.columns([7, 4], gap="medium")
             with col_radar:
-                render_radar(row, gps_sel + tech_sel, team_max, poste_median)
+                render_radar(row, gps_sel + tech_sel, team_max, poste_median, med_label="Médiane match")
             with col_kpis:
                 render_kpis_section(row, gps_sel,  "GPS",       "section-gps",  all_labels=GPS_LABELS,  ncols=3)
                 render_kpis_section(row, tech_sel, "Technique", "section-tech", all_labels=TECH_LABELS, ncols=3)
@@ -670,7 +673,7 @@ with tab_joueur:
 
             col_radar, col_kpis = st.columns([7, 4], gap="medium")
             with col_radar:
-                render_radar(stats, gps_sel + tech_sel, team_max, poste_median)
+                render_radar(stats, gps_sel + tech_sel, team_max, poste_median, med_label="Médiane poste")
             with col_kpis:
                 render_kpis_section(stats, gps_sel,  "GPS",       "section-gps",  is_moyenne=True, all_labels=GPS_LABELS,  ncols=3)
                 render_kpis_section(stats, tech_sel, "Technique", "section-tech", is_moyenne=True, all_labels=TECH_LABELS, ncols=3)
@@ -821,12 +824,15 @@ with tab_compare:
             def _get_vals(joueur_nom):
                 return stats_map.get(joueur_nom, {}), True
 
-        df_poste_c = df_all_c[df_all_c["poste"].isin(postes_c)] if postes_c else df_all_c
         _cols_ok = all(c in df_all_c.columns for c in cols_r)
         if vue == "🏉 Match":
-            med_c = df_poste_c[cols_r].median() if _cols_ok else pd.Series(dtype=float)
+            _df_mid_c = df_all_c[df_all_c["match_id"] == mid_c] if mid_c else df_all_c
+            med_c     = _df_mid_c[cols_r].median() if _cols_ok else pd.Series(dtype=float)
+            _med_label_c = "Médiane match"
         else:
-            med_c = compute_poste_median_moy(df_poste_c, cols_r) if _cols_ok else pd.Series(dtype=float)
+            df_poste_c   = df_all_c[df_all_c["poste"].isin(postes_c)] if postes_c else df_all_c
+            med_c        = compute_poste_median_moy(df_poste_c, cols_r) if _cols_ok else pd.Series(dtype=float)
+            _med_label_c = "Médiane poste"
 
         fig = go.Figure()
         theta = metriques_sel + [metriques_sel[0]]
@@ -835,9 +841,9 @@ with tab_compare:
             vals_med = [min(float(med_c.get(c, 0) or 0) / max_eq.get(c, 1) * 100, 100) for c in cols_r]
             fig.add_trace(go.Scatterpolar(
                 r=vals_med + [vals_med[0]], theta=theta,
-                name="Médiane poste",
+                name=_med_label_c,
                 text=[f"{float(med_c.get(c,0) or 0):.1f}" for c in cols_r] + [f"{float(med_c.get(cols_r[0],0) or 0):.1f}"],
-                hovertemplate="%{theta} : %{text}<extra>Médiane poste</extra>",
+                hovertemplate="%{theta} : %{text}<extra>" + _med_label_c + "</extra>",
                 line=dict(color="#aaaaaa", width=1.5, dash="dot"), fill="none",
             ))
 
