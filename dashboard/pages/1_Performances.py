@@ -736,14 +736,10 @@ with tab_compare:
     )
     joueurs_sel_c = [label_to_nom_c[l] for l in joueurs_labels_sel]
 
-    # ── Sélecteurs de métriques ────────────────────────────────────────────────
     avail_gps  = [k for k in GPS_LABELS  if GPS_LABELS[k]  in df_match_c.columns]
     avail_tech = [k for k in TECH_LABELS if TECH_LABELS[k] in df_match_c.columns]
-    cg_c, ct_c = st.columns(2)
-    with cg_c:
-        gps_sel_c = st.multiselect("Métriques GPS", avail_gps, default=avail_gps, key="cp_gps")
-    with ct_c:
-        tech_sel_c = st.multiselect("Métriques Technique", avail_tech, default=TECH_DEFAULTS if avail_tech else [], key="cp_tech")
+    gps_sel_c  = st.session_state.get("cp_gps",  avail_gps)
+    tech_sel_c = st.session_state.get("cp_tech", TECH_DEFAULTS if avail_tech else [])
 
     all_labels_c  = {**GPS_LABELS, **TECH_LABELS}
     metriques_sel = [m for m in (gps_sel_c + tech_sel_c) if all_labels_c.get(m) in df_match_c.columns]
@@ -835,3 +831,10 @@ with tab_compare:
                 row_dict = row_j.to_dict()
                 render_kpis_section(row_dict, gps_sel_c,  "GPS",       "section-gps",  all_labels=GPS_LABELS,  ncols=3)
                 render_kpis_section(row_dict, tech_sel_c, "Technique", "section-tech", all_labels=TECH_LABELS, ncols=3)
+
+        st.divider()
+        cg_c, ct_c = st.columns(2)
+        with cg_c:
+            st.multiselect("Métriques GPS", avail_gps, default=avail_gps, key="cp_gps")
+        with ct_c:
+            st.multiselect("Métriques Technique", avail_tech, default=TECH_DEFAULTS if avail_tech else [], key="cp_tech")
