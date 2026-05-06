@@ -364,6 +364,17 @@ def compute_moyenne(df_joueur: pd.DataFrame) -> dict:
     return result
 
 
+def compute_poste_median_moy(df_poste: pd.DataFrame, cols: list) -> pd.Series:
+    """Médiane des moyennes par joueur (pour le mode Moyenne)."""
+    avg_rows = []
+    for p in df_poste["nom"].dropna().unique():
+        avg = compute_moyenne(df_poste[df_poste["nom"] == p])
+        avg_rows.append({c: avg.get(c) for c in cols})
+    if not avg_rows:
+        return pd.Series(dtype=float)
+    return pd.DataFrame(avg_rows).median()
+
+
 def render_radar(vals: dict, selected_labels: list, team_ref: pd.Series, team_med: pd.Series | None = None):
     if len(selected_labels) < 3:
         st.info("Sélectionne au moins 3 métriques pour afficher le radar.")
@@ -541,7 +552,10 @@ with tab_joueur:
 
     _poste_raw = df_joueur["poste"].dropna().iloc[0] if not df_joueur.empty and df_joueur["poste"].notna().any() else None
     _df_poste = df_all[df_all["poste"] == _poste_raw] if _poste_raw else df_all
-    poste_median = _df_poste[_radar_cols].median()
+    if vue == "🏉 Match":
+        poste_median = _df_poste[_radar_cols].median()
+    else:
+        poste_median = compute_poste_median_moy(_df_poste, _radar_cols)
     _poste = str(_poste_raw) if _poste_raw else "—"
 
     if vue == "🏉 Match":
@@ -808,7 +822,11 @@ with tab_compare:
                 return stats_map.get(joueur_nom, {}), True
 
         df_poste_c = df_all_c[df_all_c["poste"].isin(postes_c)] if postes_c else df_all_c
-        med_c = df_poste_c[cols_r].median() if all(c in df_all_c.columns for c in cols_r) else pd.Series()
+        _cols_ok = all(c in df_all_c.columns for c in cols_r)
+        if vue == "🏉 Match":
+            med_c = df_poste_c[cols_r].median() if _cols_ok else pd.Series(dtype=float)
+        else:
+            med_c = compute_poste_median_moy(df_poste_c, cols_r) if _cols_ok else pd.Series(dtype=float)
 
         fig = go.Figure()
         theta = metriques_sel + [metriques_sel[0]]
