@@ -304,9 +304,11 @@ k10.metric("Décélérations", fmt(df["decels"].sum(), decimals=0))
 # ── Métriques disponibles ─────────────────────────────────────────────────────
 METRIQUES = {
     "Distance (m)":             "distance",
+    "Vitesse max (km/h)":       "vitesse_max",
     "Sprints":                  "sprints",
     "HSR (m)":                  "hsr",
     "Charge DSL":               "dsl",
+    "ACWR":                     "acwr",
     "Accélérations":            "accels",
     "Décélérations":            "decels",
     "Distance sprint (m)":      "dist_sprint",
@@ -317,132 +319,98 @@ METRIQUES = {
 }
 METRIQUES_LABELS = list(METRIQUES.keys())
 
-# Lecture session_state (avant rendu → valeurs disponibles dès le 1er run)
-met_session_lbl = st.session_state.get("e_met_session", "Distance (m)")
-met_hebdo_lbl   = st.session_state.get("e_met_hebdo",   "Charge DSL")
-extra_sel       = st.session_state.get("e_extra_charts", ["ACWR", "Vitesse max"])
+CHART_DEFAULTS = [
+    ("Distance (m)",       "Barres"),
+    ("Charge DSL",         "Barres"),
+    ("ACWR",               "Courbe"),
+    ("Vitesse max (km/h)", "Courbe"),
+]
 
-# ── Graphiques ────────────────────────────────────────────────────────────────
-def chart_par_seance(col_lbl: str) -> None:
+# Lecture session_state avant rendu (valeurs disponibles dès le 1er run grâce aux défauts)
+chart_configs = [
+    (
+        st.session_state.get(f"e_met_{i}",  CHART_DEFAULTS[i][0]),
+        st.session_state.get(f"e_type_{i}", CHART_DEFAULTS[i][1]),
+    )
+    for i in range(4)
+]
+
+
+# ── Rendu générique ───────────────────────────────────────────────────────────
+def render_chart(col_lbl: str, chart_type: str) -> None:
     col = METRIQUES[col_lbl]
-    df_c = df.dropna(subset=[col])
+    df_c = df.dropna(subset=[col, "session_type"])
+    is_acwr = col == "acwr"
+
     fig = go.Figure()
-    for stype, color in SESSION_COLORS.items():
-        d = df_c[df_c["session_type"] == stype]
-        if d.empty:
-            continue
-        fig.add_trace(go.Bar(
-            x=d["date"].dt.strftime("%d/%m"),
-            y=d[col],
-            name=stype,
-            marker_color=color,
-        ))
+
+    if is_acwr and not df_c.empty:
+        y_max = max(2.5, float(df_c[col].max()) + 0.2)
+        fig.add_hrect(y0=0.8, y1=1.3, fillcolor="#009E73", opacity=0.10, line_width=0)
+        fig.add_hrect(y0=1.5, y1=y_max, fillcolor="#D55E00", opacity=0.10, line_width=0)
+
+    if chart_type == "Barres":
+        for stype, color in SESSION_COLORS.items():
+            d = df_c[df_c["session_type"] == stype]
+            if d.empty:
+                continue
+            fig.add_trace(go.Bar(
+                x=d["date"].dt.strftime("%d/%m"),
+                y=d[col],
+                name=stype,
+                marker_color=color,
+            ))
+        fig.update_layout(
+            barmode="stack",
+            xaxis_tickangle=-45,
+            legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"),
+        )
+    else:  # Courbe
+        for stype, color in SESSION_COLORS.items():
+            d = df_c[df_c["session_type"] == stype].sort_values("date")
+            if d.empty:
+                continue
+            fig.add_trace(go.Scatter(
+                x=d["date"], y=d[col],
+                mode="lines+markers",
+                name=stype,
+                line=dict(color=color, width=2),
+                marker=dict(size=6, color=color),
+            ))
+        fig.update_layout(
+            legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"),
+        )
+
     fig.update_layout(
-        title=dict(text=f"{col_lbl} par séance", x=0.02, font=dict(size=13, color="#1a3a5c")),
-        barmode="stack",
-        xaxis_tickangle=-45,
-        legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"),
+        title=dict(text=col_lbl, x=0.02, font=dict(size=13, color="#1a3a5c")),
         xaxis_title="", yaxis_title=col_lbl,
         **PLOTLY_LAYOUT,
     )
     st.plotly_chart(fig, use_container_width=True)
 
 
-def chart_hebdo(col_lbl: str) -> None:
-    col = METRIQUES[col_lbl]
-    df_h = df.copy()
-    df_h["semaine"] = df_h["date"].dt.to_period("W-SUN").dt.start_time
-    df_h = (
-        df_h.groupby("semaine")[col].sum().reset_index()
-        .rename(columns={"semaine": "Semaine", col: col_lbl})
-    )
-    fig = px.bar(
-        df_h, x="Semaine", y=col_lbl,
-        labels={"Semaine": ""},
-        color_discrete_sequence=["#56B4E9"],
-    )
-    fig.update_layout(
-        title=dict(text=f"{col_lbl} — hebdomadaire", x=0.02, font=dict(size=13, color="#1a3a5c")),
-        xaxis_tickangle=-45,
-        **PLOTLY_LAYOUT,
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-
-def chart_acwr() -> None:
-    df_acwr = df.dropna(subset=["acwr"]).sort_values("date")
-    fig = go.Figure()
-    if not df_acwr.empty:
-        fig.add_hrect(y0=0.8, y1=1.3, fillcolor="#009E73", opacity=0.10, line_width=0)
-        fig.add_hrect(y0=1.5, y1=max(2.5, float(df_acwr["acwr"].max()) + 0.2),
-                      fillcolor="#D55E00", opacity=0.10, line_width=0)
-        fig.add_trace(go.Scatter(
-            x=df_acwr["date"], y=df_acwr["acwr"],
-            mode="lines+markers",
-            line=dict(color="#0a7ab0", width=2),
-            marker=dict(size=6, color="#0a7ab0"),
-        ))
-    fig.update_layout(
-        title=dict(text="ACWR au cours du temps", x=0.02, font=dict(size=13, color="#1a3a5c")),
-        xaxis_title="", yaxis_title="ACWR", showlegend=False,
-        **PLOTLY_LAYOUT,
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-
-def chart_vmax() -> None:
-    df_v = df.dropna(subset=["vitesse_max", "session_type"])
-    fig = px.scatter(
-        df_v, x="date", y="vitesse_max",
-        color="session_type", color_discrete_map=SESSION_COLORS,
-        labels={"date": "", "vitesse_max": "Vmax (km/h)", "session_type": "Type"},
-    )
-    fig.update_traces(marker_size=8)
-    fig.update_layout(
-        title=dict(text="Vitesse max par séance", x=0.02, font=dict(size=13, color="#1a3a5c")),
-        legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"),
-        **PLOTLY_LAYOUT,
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-
-# Rendu : les 2 premiers charts toujours affichés, ACWR et Vmax optionnels
-active_fns = [
-    (chart_par_seance, met_session_lbl),
-    (chart_hebdo,      met_hebdo_lbl),
-]
-if "ACWR" in extra_sel:
-    active_fns.append((chart_acwr, None))
-if "Vitesse max" in extra_sel:
-    active_fns.append((chart_vmax, None))
-
-for i in range(0, len(active_fns), 2):
-    pair = active_fns[i:i + 2]
-    cols = st.columns(len(pair))
-    for col_st, (fn, arg) in zip(cols, pair):
+# ── Rendu 2×2 ─────────────────────────────────────────────────────────────────
+for row in range(2):
+    c_left, c_right = st.columns(2)
+    for col_st, i in zip([c_left, c_right], [row * 2, row * 2 + 1]):
         with col_st:
-            if arg is not None:
-                fn(arg)
-            else:
-                fn()
+            render_chart(*chart_configs[i])
 
-# ── Sélecteur de métriques ────────────────────────────────────────────────────
+# ── Sélecteurs par graphique ──────────────────────────────────────────────────
 st.divider()
-cs, ch, ce = st.columns([2, 2, 2], gap="small")
-with cs:
-    st.selectbox(
-        "Métrique — par séance", METRIQUES_LABELS,
-        index=METRIQUES_LABELS.index(met_session_lbl),
-        key="e_met_session",
-    )
-with ch:
-    st.selectbox(
-        "Métrique — par semaine", METRIQUES_LABELS,
-        index=METRIQUES_LABELS.index(met_hebdo_lbl),
-        key="e_met_hebdo",
-    )
-with ce:
-    st.multiselect(
-        "Graphiques supplémentaires", ["ACWR", "Vitesse max"],
-        default=["ACWR", "Vitesse max"], key="e_extra_charts",
-    )
+sel_cols = st.columns(4, gap="small")
+for i, (def_met, def_type) in enumerate(CHART_DEFAULTS):
+    with sel_cols[i]:
+        st.caption(f"Graphique {i + 1}")
+        st.selectbox(
+            "Métrique", METRIQUES_LABELS,
+            index=METRIQUES_LABELS.index(chart_configs[i][0]),
+            key=f"e_met_{i}",
+            label_visibility="collapsed",
+        )
+        st.radio(
+            "Type", ["Barres", "Courbe"],
+            index=["Barres", "Courbe"].index(chart_configs[i][1]),
+            horizontal=True, key=f"e_type_{i}",
+            label_visibility="collapsed",
+        )
