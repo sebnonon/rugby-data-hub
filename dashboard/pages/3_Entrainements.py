@@ -330,9 +330,16 @@ def render_chart(col_lbl: str, chart_type: str) -> None:
             legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"),
         )
     else:  # Courbe
-        df_sorted = df_c.sort_values("date")
+        if sem_sel == "Toutes":
+            df_w = df_c.copy()
+            df_w["semaine"] = df_w["date"].dt.to_period("W-SUN").dt.start_time
+            df_plot = df_w.groupby("semaine")[col].mean().reset_index().sort_values("semaine")
+            x_vals, y_vals = df_plot["semaine"], df_plot[col]
+        else:
+            df_plot = df_c.sort_values("date")
+            x_vals, y_vals = df_plot["date"], df_plot[col]
         fig.add_trace(go.Scatter(
-            x=df_sorted["date"], y=df_sorted[col],
+            x=x_vals, y=y_vals,
             mode="lines+markers",
             line=dict(color="#0a7ab0", width=2),
             marker=dict(size=6, color="#0a7ab0"),
