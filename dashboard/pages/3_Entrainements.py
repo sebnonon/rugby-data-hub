@@ -421,7 +421,10 @@ for i in range(0, len(active_fns), 2):
     cols = st.columns(len(pair))
     for col_st, (fn, arg) in zip(cols, pair):
         with col_st:
-            fn(arg) if arg is not None else fn()
+            if arg is not None:
+                fn(arg)
+            else:
+                fn()
 
 # ── Sélecteur de métriques ────────────────────────────────────────────────────
 st.divider()
