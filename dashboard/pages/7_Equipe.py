@@ -336,18 +336,23 @@ df_nos_touches = df_touche[df_touche["est_rec"] == 1]
 
 # ── KPIs plaquages & passes ───────────────────────────────────────────────────
 if not df_match_perf.empty:
-    pla_total = df_match_perf["plaquages_total"].dropna().sum()
-    pla_pos   = df_match_perf["plaquages_positif"].dropna().sum()
-    pla_pct   = f"{round(pla_pos / pla_total * 100)} %" if pla_total > 0 else "—"
-    pas_total = df_match_perf["passes_total"].dropna().sum()
-    pas_pos   = df_match_perf["passes_positif"].dropna().sum()
-    pas_pct   = f"{round(pas_pos / pas_total * 100)} %" if pas_total > 0 else "—"
+    pla_total  = df_match_perf["plaquages_total"].dropna().sum()
+    pla_pos    = df_match_perf["plaquages_positif"].dropna().sum()
+    pla_pct    = f"{round(pla_pos / pla_total * 100)} %" if pla_total > 0 else "—"
+    pas_total  = df_match_perf["passes_total"].dropna().sum()
+    pas_pos    = df_match_perf["passes_positif"].dropna().sum()
+    pas_pct    = f"{round(pas_pos / pas_total * 100)} %" if pas_total > 0 else "—"
+    dist_total = df_match_perf["total_distance"].dropna().sum()
+    vmax       = df_match_perf["max_speed"].dropna().max()
     _ka, _kb = st.columns(2)
     _ka.metric("Plaquages", fmt(pla_total))
     _kb.metric("Réussite plaquages", pla_pct)
     _kc, _kd = st.columns(2)
     _kc.metric("Passes", fmt(pas_total))
     _kd.metric("Réussite passes", pas_pct)
+    _ke, _kf = st.columns(2)
+    _ke.metric("Distance totale", fmt(dist_total, suffix=" m"))
+    _kf.metric("Vitesse max", fmt(vmax, decimals=1, suffix=" km/h"))
     st.divider()
 
 # ══════════════════════════════════════════════════════════════════════════════
