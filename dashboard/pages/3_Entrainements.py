@@ -133,7 +133,7 @@ def load_data():
             "dynamic_stress_load, metabolic_distance_absolute, "
             "accelerations_absolute, decelerations_absolute, "
             "max_acceleration, acute, chronic, acute_chronic_ratio, "
-            "joueur(nom, prenom)"
+            "joueur(nom, prenom, poste_principal)"
         )
         .execute()
     )
@@ -144,6 +144,7 @@ def load_data():
             "joueur_id":       r["joueur_id"],
             "nom":             j.get("nom"),
             "prenom":          j.get("prenom"),
+            "poste":           j.get("poste_principal"),
             "date":            r["date"],
             "session_type":    r["session_type"],
             "seance_type":     r["seance_type"],
@@ -190,19 +191,30 @@ st.markdown(
 
 # Liste joueurs
 df_j = (
-    df_all[["nom", "prenom"]].drop_duplicates().dropna(subset=["nom"]).sort_values("nom")
+    df_all[["nom", "prenom", "poste"]].drop_duplicates(subset=["nom"]).dropna(subset=["nom"]).sort_values("nom")
 )
 df_j["label"] = df_j.apply(
     lambda r: f"{r['prenom']} {r['nom']}" if pd.notna(r["prenom"]) else r["nom"], axis=1
 )
 joueur_labels = df_j["label"].tolist()
-label_to_nom = dict(zip(df_j["label"], df_j["nom"]))
+label_to_nom  = dict(zip(df_j["label"], df_j["nom"]))
+label_to_poste = dict(zip(df_j["label"], df_j["poste"]))
 
-c_j, c_s, c_m, c_w = st.columns([2, 1.4, 1.6, 2], gap="small")
+c_j, c_p, c_s, c_m, c_w = st.columns([2, 1.2, 1.4, 1.6, 2], gap="small")
 
 with c_j:
     joueur_label = st.selectbox("Joueur", joueur_labels, key="e_joueur")
 joueur = label_to_nom[joueur_label] if joueur_labels else None
+
+with c_p:
+    poste = label_to_poste.get(joueur_label) or "—"
+    st.markdown('<div style="height:1.6rem"></div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div style="background:#ffffff;border:1px solid #c0d8ea;border-radius:8px;'
+        f'padding:6px 10px;font-size:0.78rem;color:#2a6080;text-align:center;">'
+        f'<span style="font-weight:700;color:#071626;">{poste}</span></div>',
+        unsafe_allow_html=True,
+    )
 
 df_p = df_all[df_all["nom"] == joueur].dropna(subset=["date"]).copy() if joueur else df_all.iloc[0:0].copy()
 df_p["saison"] = df_p["date"].apply(_get_saison) if not df_p.empty else pd.Series(dtype=str)
