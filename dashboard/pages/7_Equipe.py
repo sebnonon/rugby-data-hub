@@ -341,11 +341,14 @@ if not df_match_perf.empty:
     pla_pos   = df_match_perf["plaquages_positif"].dropna().sum()
     pla_pct   = f"{round(pla_pos / pla_total * 100)} %" if pla_total > 0 else "—"
     pas_total = df_match_perf["passes_total"].dropna().sum()
+    pas_pos   = df_match_perf["passes_positif"].dropna().sum()
+    pas_pct   = f"{round(pas_pos / pas_total * 100)} %" if pas_total > 0 else "—"
     section("Plaquages & Passes", "section-tech")
     kpis_row([
         ("Plaquages", fmt(pla_total)),
         ("Réussite plaquages", pla_pct),
         ("Passes", fmt(pas_total)),
+        ("Réussite passes", pas_pct),
     ])
     st.divider()
 
