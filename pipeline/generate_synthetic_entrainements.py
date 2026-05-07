@@ -4,7 +4,7 @@ et les insère dans la base Supabase courante (.env).
 
 Cadence cible :
   - Semaine de match : 5 séances (Lun J+2, Mar Reprise, Mer Reprise, Jeu J-2, Ven J-1)
-  - Semaine sans match : 4 séances (Lun Reprise, Mar Reprise, Mer J-2, Ven J-1)
+  - Semaine sans match : 5 séances (Lun Reprise, Mar Reprise, Mer J-2, Jeu Reprise, Ven J-1)
 
 Idempotent : ne ré-insère pas une séance déjà présente sur (date, session_type).
 Toutes les insertions portent un _source_file préfixé "synthetic_" pour suppression ciblée :
@@ -51,6 +51,7 @@ PATTERN_NO_MATCH_WEEK = [
     (0, "Reprise", 0.50),  # Lundi
     (1, "Reprise", 0.65),  # Mardi
     (2, "J-2",     0.85),  # Mercredi
+    (3, "Reprise", 0.70),  # Jeudi
     (4, "J-1",     0.55),  # Vendredi
 ]
 
@@ -179,7 +180,7 @@ def main():
     while cursor <= last_day:
         is_match_week = cursor in week_match
         pattern = PATTERN_MATCH_WEEK if is_match_week else PATTERN_NO_MATCH_WEEK
-        quota = 5 if is_match_week else 4
+        quota = 5
 
         # Compte les jours de la semaine déjà couverts par une séance (existante ou ajoutée)
         week_days = {cursor + timedelta(days=k) for k in range(7)}
@@ -197,8 +198,7 @@ def main():
                     continue
                 if seance_date in existing_dates:
                     continue
-                n_joueurs = rnd_int(26, min(30, len(joueurs)))
-                joueurs_seance = random.sample(joueurs, n_joueurs)
+                joueurs_seance = joueurs
                 jour_fr = JOURS_FR[seance_date.weekday()]
                 source = f"synthetic_{seance_date.isoformat()}_{stype}.csv"
                 for j in joueurs_seance:
