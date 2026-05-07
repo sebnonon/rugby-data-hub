@@ -200,7 +200,7 @@ joueur_labels = df_j["label"].tolist()
 label_to_nom  = dict(zip(df_j["label"], df_j["nom"]))
 label_to_poste = dict(zip(df_j["label"], df_j["poste"]))
 
-c_j, c_p, c_s, c_m, c_w = st.columns([2, 1.2, 1.4, 1.6, 2], gap="small")
+c_j, c_p, c_s, c_m, c_w = st.columns([2, 1.8, 1.4, 1.6, 2], gap="small")
 
 with c_j:
     joueur_label = st.selectbox("Joueur", joueur_labels, key="e_joueur")
@@ -211,7 +211,7 @@ with c_p:
     st.markdown('<div style="height:1.6rem"></div>', unsafe_allow_html=True)
     st.markdown(
         f'<div style="background:#ffffff;border:1px solid #c0d8ea;border-radius:8px;'
-        f'padding:6px 10px;font-size:0.78rem;color:#2a6080;text-align:center;">'
+        f'padding:10px 12px;font-size:0.92rem;color:#2a6080;text-align:center;">'
         f'<span style="font-weight:700;color:#071626;">{poste}</span></div>',
         unsafe_allow_html=True,
     )
