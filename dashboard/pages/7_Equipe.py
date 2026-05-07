@@ -99,8 +99,13 @@ def load_perf_match():
         "passes_total, passes_positif, plaquages_total, plaquages_positif, "
         "porteur_total, soutiens_total, contacts_total, grattages_total, "
         "essais_total, minutes_jouees, "
+        "jap_total, jap_positif, jap_negatif, jap_neutre, "
+        "jap_depuis_propre_22m, jap_depuis_mi_terrain, jap_depuis_camp_adverse, "
+        "jap_en_touche, jap_camp_adverse, "
         "joueur(nom, prenom, poste_principal), "
-        "match(date, adversaire, adversaire_nom_complet, score_rec, score_adv, journee, session_title)"
+        "match(date, adversaire, adversaire_nom_complet, score_rec, score_adv, journee, session_title, "
+        "melee_total_rec, melee_positif_rec, melee_negatif_rec, melee_neutre_rec, "
+        "possession_rec, possession_adv)"
     )
     res = c.table("perf_match").select(cols).execute()
     rows = []
@@ -132,14 +137,29 @@ def load_perf_match():
             "metabolic_distance": r["metabolic_distance_absolute"],
             "passes_total":       r["passes_total"],
             "passes_positif":     r["passes_positif"],
-            "plaquages_total":    r["plaquages_total"],
-            "plaquages_positif":  r["plaquages_positif"],
-            "porteur_total":      r["porteur_total"],
-            "soutiens_total":     r["soutiens_total"],
-            "contacts_total":     r["contacts_total"],
-            "grattages_total":    r["grattages_total"],
-            "essais_total":       r["essais_total"],
-            "minutes_jouees":     r["minutes_jouees"],
+            "plaquages_total":       r["plaquages_total"],
+            "plaquages_positif":     r["plaquages_positif"],
+            "porteur_total":         r["porteur_total"],
+            "soutiens_total":        r["soutiens_total"],
+            "contacts_total":        r["contacts_total"],
+            "grattages_total":       r["grattages_total"],
+            "essais_total":          r["essais_total"],
+            "minutes_jouees":        r["minutes_jouees"],
+            "jap_total":             r["jap_total"],
+            "jap_positif":           r["jap_positif"],
+            "jap_negatif":           r["jap_negatif"],
+            "jap_neutre":            r["jap_neutre"],
+            "jap_depuis_propre_22m": r["jap_depuis_propre_22m"],
+            "jap_depuis_mi_terrain": r["jap_depuis_mi_terrain"],
+            "jap_depuis_camp_adv":   r["jap_depuis_camp_adverse"],
+            "jap_en_touche":         r["jap_en_touche"],
+            "jap_camp_adverse":      r["jap_camp_adverse"],
+            "melee_positif_rec":     r["match"]["melee_positif_rec"] if r["match"] else None,
+            "melee_negatif_rec":     r["match"]["melee_negatif_rec"] if r["match"] else None,
+            "melee_neutre_rec":      r["match"]["melee_neutre_rec"]  if r["match"] else None,
+            "melee_total_rec":       r["match"]["melee_total_rec"]   if r["match"] else None,
+            "possession_rec":        r["match"]["possession_rec"]    if r["match"] else None,
+            "possession_adv":        r["match"]["possession_adv"]    if r["match"] else None,
         })
     df = pd.DataFrame(rows)
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
@@ -257,7 +277,11 @@ df_touche = load_touche()
 
 # Construire la liste des matchs à partir de perf_match (source la plus complète)
 df_matchs_ref = (
-    df_perf[["match_id", "date", "adversaire", "adversaire_complet", "score_rec", "score_adv", "journee"]]
+    df_perf[[
+        "match_id", "date", "adversaire", "adversaire_complet", "score_rec", "score_adv", "journee",
+        "melee_positif_rec", "melee_negatif_rec", "melee_neutre_rec", "melee_total_rec",
+        "possession_rec", "possession_adv",
+    ]]
     .drop_duplicates(subset=["match_id"])
     .dropna(subset=["date"])
     .sort_values("date")
@@ -387,6 +411,19 @@ else:
         )
         st.dataframe(df_disp, use_container_width=True, hide_index=True)
 
+    # KPIs plaquages & passes
+    if not df_match_perf.empty:
+        pla_total = df_match_perf["plaquages_total"].dropna().sum()
+        pla_pos   = df_match_perf["plaquages_positif"].dropna().sum()
+        pla_pct   = f"{round(pla_pos / pla_total * 100)} %" if pla_total > 0 else "—"
+        pas_total = df_match_perf["passes_total"].dropna().sum()
+        st.markdown("##### Plaquages & Passes")
+        kpis_row([
+            ("Plaquages", fmt(pla_total)),
+            ("Réussite plaquages", pla_pct),
+            ("Passes", fmt(pas_total)),
+        ])
+
 st.divider()
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -422,39 +459,73 @@ else:
         on="match_id", how="left",
     )
 
-    df_match_sc = df_scrums_all[df_scrums_all["match_id"] == mid_sel]
-    if df_match_sc.empty:
-        st.info("Aucune donnée de mêlée pour ce match.")
-    else:
-        row_m = df_melee_par_match[df_melee_par_match["match_id"] == mid_sel]
-        if not row_m.empty:
-            r = row_m.iloc[0]
-            kpis_row([
-                ("Nb mêlées", fmt(r["nb_melees"])),
-                ("Impact moy.", fmt(r["impact_moy"], decimals=1)),
-                ("Charge totale", fmt(r["scrum_load_total"], decimals=0)),
-            ])
+    # Camembert mêlées gagnées / perdues / neutres (données codage vidéo match)
+    _row_match = df_matchs_ref[df_matchs_ref["match_id"] == mid_sel]
+    mel_pie_data = None
+    if not _row_match.empty:
+        _rm = _row_match.iloc[0]
+        mel_pos = _rm.get("melee_positif_rec") or 0
+        mel_neg = _rm.get("melee_negatif_rec") or 0
+        mel_neu = _rm.get("melee_neutre_rec")  or 0
+        if mel_pos + mel_neg + mel_neu > 0:
+            mel_pie_data = pd.DataFrame({
+                "Issue": ["Gagnée", "Perdue", "Neutre"],
+                "Nb":    [mel_pos,  mel_neg,  mel_neu],
+            })
 
-        df_tl = (
-            df_melee[df_melee["match_id"] == mid_sel]
-            .groupby(["scrum_num", "mi_temps"])
-            .agg(impact_moy=("impact", "mean"), scrum_load_moy=("scrum_load", "mean"))
-            .reset_index()
-            .sort_values(["mi_temps", "scrum_num"])
-        )
-        df_tl["label"] = df_tl.apply(
-            lambda r: f"MT{int(r['mi_temps'])} — M{int(r['scrum_num'])}", axis=1
-        )
-        fig = go.Figure()
-        fig.add_trace(go.Bar(x=df_tl["label"], y=df_tl["impact_moy"],    name="Impact moy.",     marker_color="#56B4E9"))
-        fig.add_trace(go.Bar(x=df_tl["label"], y=df_tl["scrum_load_moy"], name="Scrum Load moy.", marker_color="#E69F00"))
-        fig.update_layout(
-            barmode="group", xaxis_tickangle=-35,
-            legend=dict(orientation="h", y=1.12, font_color="#1a3a5c"),
-            xaxis_title="", yaxis_title="",
-            **PLOTLY_LAYOUT,
-        )
-        st.plotly_chart(fig, use_container_width=True)
+    col_pie, col_tl = st.columns([1, 2])
+
+    with col_pie:
+        if mel_pie_data is not None:
+            fig_pie = px.pie(
+                mel_pie_data, names="Issue", values="Nb",
+                color="Issue",
+                color_discrete_map={"Gagnée": "#009E73", "Perdue": "#E05C5C", "Neutre": "#aaaaaa"},
+                title="Mêlées",
+            )
+            fig_pie.update_layout(
+                paper_bgcolor="#ffffff", font_color="#1a3a5c",
+                margin=dict(t=40, b=10, l=10, r=10), height=300,
+                legend=dict(orientation="h", y=-0.1),
+            )
+            st.plotly_chart(fig_pie, use_container_width=True)
+        else:
+            st.info("Données mêlées (codage vidéo) non disponibles pour ce match.")
+
+    with col_tl:
+        df_match_sc = df_scrums_all[df_scrums_all["match_id"] == mid_sel]
+        if df_match_sc.empty:
+            st.info("Aucune donnée GPS de mêlée pour ce match.")
+        else:
+            row_m = df_melee_par_match[df_melee_par_match["match_id"] == mid_sel]
+            if not row_m.empty:
+                r = row_m.iloc[0]
+                kpis_row([
+                    ("Nb mêlées GPS", fmt(r["nb_melees"])),
+                    ("Impact moy.",   fmt(r["impact_moy"], decimals=1)),
+                    ("Charge totale", fmt(r["scrum_load_total"], decimals=0)),
+                ])
+
+            df_tl = (
+                df_melee[df_melee["match_id"] == mid_sel]
+                .groupby(["scrum_num", "mi_temps"])
+                .agg(impact_moy=("impact", "mean"), scrum_load_moy=("scrum_load", "mean"))
+                .reset_index()
+                .sort_values(["mi_temps", "scrum_num"])
+            )
+            df_tl["label"] = df_tl.apply(
+                lambda r: f"MT{int(r['mi_temps'])} — M{int(r['scrum_num'])}", axis=1
+            )
+            fig = go.Figure()
+            fig.add_trace(go.Bar(x=df_tl["label"], y=df_tl["impact_moy"],     name="Impact moy.",     marker_color="#56B4E9"))
+            fig.add_trace(go.Bar(x=df_tl["label"], y=df_tl["scrum_load_moy"], name="Scrum Load moy.", marker_color="#E69F00"))
+            fig.update_layout(
+                barmode="group", xaxis_tickangle=-35,
+                legend=dict(orientation="h", y=1.12, font_color="#1a3a5c"),
+                xaxis_title="", yaxis_title="",
+                **PLOTLY_LAYOUT,
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
 st.divider()
 
@@ -486,14 +557,21 @@ else:
         ])
 
         col_l, col_r = st.columns(2)
+        def _is_gagnee(val):
+            return str(val).lower() in ["gagné", "gagne", "won", "win", "r", "1", "oui"] if pd.notna(val) else False
+
         with col_l:
             if "zone" in df_t_match.columns and df_t_match["zone"].notna().any():
-                vc = df_t_match["zone"].value_counts().reset_index()
-                vc.columns = ["Zone", "Nb"]
-                fig = px.bar(vc, x="Zone", y="Nb", color="Zone",
-                             color_discrete_sequence=["#CC79A7", "#56B4E9", "#E69F00", "#009E73"],
-                             labels={"Zone": "", "Nb": "Nb touches"})
-                fig.update_layout(**PLOTLY_LAYOUT, showlegend=False)
+                df_tz = df_t_match[df_t_match["zone"].notna()].copy()
+                df_tz["issue"] = df_tz["resultat"].apply(lambda v: "Gagnée" if _is_gagnee(v) else "Perdue")
+                df_zone = df_tz.groupby(["zone", "issue"]).size().reset_index(name="nb")
+                fig = px.bar(
+                    df_zone, x="zone", y="nb", color="issue",
+                    color_discrete_map={"Gagnée": "#009E73", "Perdue": "#E05C5C"},
+                    barmode="stack",
+                    labels={"zone": "", "nb": "Nb touches", "issue": ""},
+                )
+                fig.update_layout(**PLOTLY_LAYOUT, legend=dict(orientation="h", y=1.12, font_color="#1a3a5c"))
                 st.plotly_chart(fig, use_container_width=True)
         with col_r:
             if "alignement" in df_t_match.columns and df_t_match["alignement"].notna().any():
@@ -509,3 +587,70 @@ else:
             with st.expander("Détail des touches"):
                 cols_disp = [c for c in ["resultat", "alignement", "zone", "sortie"] if c in df_t_match.columns]
                 st.dataframe(df_t_match[cols_disp], use_container_width=True, hide_index=True)
+
+st.divider()
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SECTION D — JEUX AU PIED
+# ══════════════════════════════════════════════════════════════════════════════
+
+section("Jeux au pied", "section-tech")
+
+if df_match_perf.empty:
+    st.info("Aucune donnée de jeu au pied pour ce match.")
+else:
+    jap_t   = int(df_match_perf["jap_total"].dropna().sum())
+    jap_pos = int(df_match_perf["jap_positif"].dropna().sum())
+    jap_neg = int(df_match_perf["jap_negatif"].dropna().sum())
+    jap_neu = int(df_match_perf["jap_neutre"].dropna().sum())
+    jap_tch = int(df_match_perf["jap_en_touche"].dropna().sum())
+    jap_pct_tch = f"{round(jap_tch / jap_t * 100)} %" if jap_t > 0 else "—"
+
+    kpis_row([
+        ("Jeux au pied", fmt(jap_t)),
+        ("En touche", fmt(jap_tch)),
+        ("% en touche", jap_pct_tch),
+    ])
+
+    if jap_t > 0:
+        col_l, col_r = st.columns(2)
+
+        with col_l:
+            # Camembert qualité (positif / négatif / neutre)
+            if jap_pos + jap_neg + jap_neu > 0:
+                df_qual = pd.DataFrame({
+                    "Issue": ["Positif", "Négatif", "Neutre"],
+                    "Nb":    [jap_pos,   jap_neg,   jap_neu],
+                })
+                fig_q = px.pie(
+                    df_qual, names="Issue", values="Nb",
+                    color="Issue",
+                    color_discrete_map={"Positif": "#009E73", "Négatif": "#E05C5C", "Neutre": "#aaaaaa"},
+                    title="Qualité des jeux au pied",
+                )
+                fig_q.update_layout(
+                    paper_bgcolor="#ffffff", font_color="#1a3a5c",
+                    margin=dict(t=40, b=10, l=10, r=10), height=300,
+                    legend=dict(orientation="h", y=-0.1),
+                )
+                st.plotly_chart(fig_q, use_container_width=True)
+
+        with col_r:
+            # Bar zones d'origine
+            zones_data = {
+                "Propre 22m":  int(df_match_perf["jap_depuis_propre_22m"].dropna().sum()),
+                "Mi-terrain":  int(df_match_perf["jap_depuis_mi_terrain"].dropna().sum()),
+                "Camp adverse": int(df_match_perf["jap_depuis_camp_adv"].dropna().sum()),
+            }
+            df_zones = pd.DataFrame(zones_data.items(), columns=["Zone", "Nb"])
+            df_zones = df_zones[df_zones["Nb"] > 0]
+            if not df_zones.empty:
+                fig_z = px.bar(
+                    df_zones, x="Zone", y="Nb",
+                    color="Zone",
+                    color_discrete_sequence=["#56B4E9", "#E69F00", "#CC79A7"],
+                    labels={"Zone": "", "Nb": "Nb jeux au pied"},
+                    title="Zones d'origine",
+                )
+                fig_z.update_layout(**PLOTLY_LAYOUT, showlegend=False)
+                st.plotly_chart(fig_z, use_container_width=True)
