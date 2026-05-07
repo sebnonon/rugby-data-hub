@@ -399,6 +399,7 @@ with col_melee:
             fig_pie = px.pie(
                 mel_pie_data, names="Issue", values="Nb", color="Issue",
                 color_discrete_map={"Gagnée": "#009E73", "Perdue": "#E05C5C", "Neutre": "#aaaaaa"},
+                title="Mêlées",
             )
             fig_pie.update_layout(
                 paper_bgcolor="#ffffff", font_color="#1a3a5c",
