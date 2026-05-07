@@ -33,12 +33,12 @@ st.markdown("""
     [data-testid="stMetric"] {
         background-color: #ffffff;
         border: 1px solid #c0d8ea;
-        border-radius: 10px;
-        padding: 18px 20px;
+        border-radius: 8px;
+        padding: 8px 12px;
     }
     [data-testid="stMetricLabel"] {
         color: #2a6080;
-        font-size: 0.8rem;
+        font-size: 0.68rem;
         text-transform: uppercase;
         letter-spacing: 0.6px;
         font-weight: 700;
@@ -46,7 +46,7 @@ st.markdown("""
     [data-testid="stMetricValue"] {
         color: #071626;
         font-weight: 800;
-        font-size: 1.65rem !important;
+        font-size: 1.1rem !important;
         white-space: nowrap;
     }
 
@@ -344,12 +344,12 @@ if not df_match_perf.empty:
     pas_pos   = df_match_perf["passes_positif"].dropna().sum()
     pas_pct   = f"{round(pas_pos / pas_total * 100)} %" if pas_total > 0 else "—"
     section("Plaquages & Passes", "section-tech")
-    kpis_row([
-        ("Plaquages", fmt(pla_total)),
-        ("Réussite plaquages", pla_pct),
-        ("Passes", fmt(pas_total)),
-        ("Réussite passes", pas_pct),
-    ])
+    _ka, _kb = st.columns(2)
+    _ka.metric("Plaquages", fmt(pla_total))
+    _kb.metric("Réussite plaquages", pla_pct)
+    _kc, _kd = st.columns(2)
+    _kc.metric("Passes", fmt(pas_total))
+    _kd.metric("Réussite passes", pas_pct)
     st.divider()
 
 # ══════════════════════════════════════════════════════════════════════════════
