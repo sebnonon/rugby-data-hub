@@ -445,10 +445,6 @@ with col_touche:
         if df_t_match.empty:
             st.info("Aucune touche pour ce match.")
         else:
-            kpis_row([
-                ("Touches jouées", str(len(df_t_match))),
-                ("Résultat",       _taux_reussite(df_t_match)),
-            ])
             if "zone" in df_t_match.columns and df_t_match["zone"].notna().any():
                 df_tz = df_t_match[df_t_match["zone"].notna()].copy()
                 df_tz["issue"] = df_tz["resultat"].apply(lambda v: "Gagnée" if _is_gagnee(v) else "Perdue")
