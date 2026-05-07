@@ -127,10 +127,12 @@ def load_data():
         c.table("perf_entrainement")
         .select(
             "joueur_id, date, session_type, seance_type, titre, "
-            "total_distance, max_speed, sprints, "
-            "high_speed_running_absolute, dynamic_stress_load, "
+            "total_distance, max_speed, sprints, sprint_distance, "
+            "high_speed_running_absolute, hsr_per_minute_absolute, "
+            "hml_distance, hmld_per_minute, "
+            "dynamic_stress_load, metabolic_distance_absolute, "
             "accelerations_absolute, decelerations_absolute, "
-            "acute_chronic_ratio, "
+            "max_acceleration, acute, chronic, acute_chronic_ratio, "
             "joueur(nom, prenom)"
         )
         .execute()
@@ -139,21 +141,29 @@ def load_data():
     for r in res.data:
         j = r.get("joueur") or {}
         rows.append({
-            "joueur_id":    r["joueur_id"],
-            "nom":          j.get("nom"),
-            "prenom":       j.get("prenom"),
-            "date":         r["date"],
-            "session_type": r["session_type"],
-            "seance_type":  r["seance_type"],
-            "titre":        r["titre"],
-            "distance":     r["total_distance"],
-            "vitesse_max":  r["max_speed"],
-            "sprints":      r["sprints"],
-            "hsr":          r["high_speed_running_absolute"],
-            "dsl":          r["dynamic_stress_load"],
-            "accels":       r["accelerations_absolute"],
-            "decels":       r["decelerations_absolute"],
-            "acwr":         r["acute_chronic_ratio"],
+            "joueur_id":       r["joueur_id"],
+            "nom":             j.get("nom"),
+            "prenom":          j.get("prenom"),
+            "date":            r["date"],
+            "session_type":    r["session_type"],
+            "seance_type":     r["seance_type"],
+            "titre":           r["titre"],
+            "distance":        r["total_distance"],
+            "vitesse_max":     r["max_speed"],
+            "sprints":         r["sprints"],
+            "dist_sprint":     r["sprint_distance"],
+            "hsr":             r["high_speed_running_absolute"],
+            "hsr_per_min":     r["hsr_per_minute_absolute"],
+            "hml":             r["hml_distance"],
+            "hml_per_min":     r["hmld_per_minute"],
+            "dsl":             r["dynamic_stress_load"],
+            "dist_metabolique":r["metabolic_distance_absolute"],
+            "accels":          r["accelerations_absolute"],
+            "decels":          r["decelerations_absolute"],
+            "accel_max":       r["max_acceleration"],
+            "acute":           r["acute"],
+            "chronic":         r["chronic"],
+            "acwr":            r["acute_chronic_ratio"],
         })
     df = pd.DataFrame(rows)
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
@@ -282,108 +292,145 @@ k8.metric("HSR total", fmt(df["hsr"].sum(), decimals=0, suffix=" m"))
 k9.metric("Accélérations", fmt(df["accels"].sum(), decimals=0))
 k10.metric("Décélérations", fmt(df["decels"].sum(), decimals=0))
 
+# ── Métriques disponibles ─────────────────────────────────────────────────────
+METRIQUES = {
+    "Distance (m)":             "distance",
+    "Sprints":                  "sprints",
+    "HSR (m)":                  "hsr",
+    "Charge DSL":               "dsl",
+    "Accélérations":            "accels",
+    "Décélérations":            "decels",
+    "Distance sprint (m)":      "dist_sprint",
+    "HSR / min":                "hsr_per_min",
+    "HML distance (m)":         "hml",
+    "Distance métabolique (m)": "dist_metabolique",
+    "Accel. max (m/s²)":        "accel_max",
+}
+METRIQUES_LABELS = list(METRIQUES.keys())
+
+# Lecture session_state (avant rendu → valeurs disponibles dès le 1er run)
+met_session_lbl = st.session_state.get("e_met_session", "Distance (m)")
+met_hebdo_lbl   = st.session_state.get("e_met_hebdo",   "Charge DSL")
+extra_sel       = st.session_state.get("e_extra_charts", ["ACWR", "Vitesse max"])
+
 # ── Graphiques ────────────────────────────────────────────────────────────────
-CHART_OPTIONS = [
-    "Distance par séance",
-    "ACWR",
-    "Charge hebdo DSL",
-    "Vitesse max",
+def chart_par_seance(col_lbl: str) -> None:
+    col = METRIQUES[col_lbl]
+    df_c = df.dropna(subset=[col])
+    fig = go.Figure()
+    for stype, color in SESSION_COLORS.items():
+        d = df_c[df_c["session_type"] == stype]
+        if d.empty:
+            continue
+        fig.add_trace(go.Bar(
+            x=d["date"].dt.strftime("%d/%m"),
+            y=d[col],
+            name=stype,
+            marker_color=color,
+        ))
+    fig.update_layout(
+        title=dict(text=f"{col_lbl} par séance", x=0.02, font=dict(size=13, color="#1a3a5c")),
+        barmode="stack",
+        xaxis_tickangle=-45,
+        legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"),
+        xaxis_title="", yaxis_title=col_lbl,
+        **PLOTLY_LAYOUT,
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def chart_hebdo(col_lbl: str) -> None:
+    col = METRIQUES[col_lbl]
+    df_h = df.copy()
+    df_h["semaine"] = df_h["date"].dt.to_period("W-SUN").dt.start_time
+    df_h = (
+        df_h.groupby("semaine")[col].sum().reset_index()
+        .rename(columns={"semaine": "Semaine", col: col_lbl})
+    )
+    fig = px.bar(
+        df_h, x="Semaine", y=col_lbl,
+        labels={"Semaine": ""},
+        color_discrete_sequence=["#56B4E9"],
+    )
+    fig.update_layout(
+        title=dict(text=f"{col_lbl} — hebdomadaire", x=0.02, font=dict(size=13, color="#1a3a5c")),
+        xaxis_tickangle=-45,
+        **PLOTLY_LAYOUT,
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def chart_acwr() -> None:
+    df_acwr = df.dropna(subset=["acwr"]).sort_values("date")
+    fig = go.Figure()
+    if not df_acwr.empty:
+        fig.add_hrect(y0=0.8, y1=1.3, fillcolor="#009E73", opacity=0.10, line_width=0)
+        fig.add_hrect(y0=1.5, y1=max(2.5, float(df_acwr["acwr"].max()) + 0.2),
+                      fillcolor="#D55E00", opacity=0.10, line_width=0)
+        fig.add_trace(go.Scatter(
+            x=df_acwr["date"], y=df_acwr["acwr"],
+            mode="lines+markers",
+            line=dict(color="#0a7ab0", width=2),
+            marker=dict(size=6, color="#0a7ab0"),
+        ))
+    fig.update_layout(
+        title=dict(text="ACWR au cours du temps", x=0.02, font=dict(size=13, color="#1a3a5c")),
+        xaxis_title="", yaxis_title="ACWR", showlegend=False,
+        **PLOTLY_LAYOUT,
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def chart_vmax() -> None:
+    df_v = df.dropna(subset=["vitesse_max"])
+    fig = px.scatter(
+        df_v, x="date", y="vitesse_max",
+        color="session_type", color_discrete_map=SESSION_COLORS,
+        labels={"date": "", "vitesse_max": "Vmax (km/h)", "session_type": "Type"},
+    )
+    fig.update_traces(marker_size=8)
+    fig.update_layout(
+        title=dict(text="Vitesse max par séance", x=0.02, font=dict(size=13, color="#1a3a5c")),
+        legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"),
+        **PLOTLY_LAYOUT,
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+
+# Rendu : les 2 premiers charts toujours affichés, ACWR et Vmax optionnels
+active_fns = [
+    (chart_par_seance, met_session_lbl),
+    (chart_hebdo,      met_hebdo_lbl),
 ]
-charts_sel = st.session_state.get("e_charts", CHART_OPTIONS)
+if "ACWR" in extra_sel:
+    active_fns.append((chart_acwr, None))
+if "Vitesse max" in extra_sel:
+    active_fns.append((chart_vmax, None))
 
-
-def render_chart(name: str) -> None:
-    if name == "Distance par séance":
-        fig = go.Figure()
-        for stype, color in SESSION_COLORS.items():
-            d = df_dist[df_dist["session_type"] == stype]
-            if d.empty:
-                continue
-            fig.add_trace(go.Bar(
-                x=d["date"].dt.strftime("%d/%m"),
-                y=d["distance"],
-                name=stype,
-                marker_color=color,
-            ))
-        fig.update_layout(
-            title=dict(text="Distance par séance", x=0.02, font=dict(size=13, color="#1a3a5c")),
-            barmode="stack",
-            xaxis_tickangle=-45,
-            legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"),
-            xaxis_title="", yaxis_title="Distance (m)",
-            **PLOTLY_LAYOUT,
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-    elif name == "ACWR":
-        df_acwr = df.dropna(subset=["acwr"]).sort_values("date")
-        fig_a = go.Figure()
-        if not df_acwr.empty:
-            fig_a.add_hrect(y0=0.8, y1=1.3, fillcolor="#009E73", opacity=0.10, line_width=0)
-            fig_a.add_hrect(y0=1.5, y1=max(2.5, float(df_acwr["acwr"].max()) + 0.2),
-                            fillcolor="#D55E00", opacity=0.10, line_width=0)
-            fig_a.add_trace(go.Scatter(
-                x=df_acwr["date"], y=df_acwr["acwr"],
-                mode="lines+markers",
-                line=dict(color="#0a7ab0", width=2),
-                marker=dict(size=6, color="#0a7ab0"),
-            ))
-        fig_a.update_layout(
-            title=dict(text="ACWR au cours du temps", x=0.02, font=dict(size=13, color="#1a3a5c")),
-            xaxis_title="", yaxis_title="ACWR",
-            showlegend=False,
-            **PLOTLY_LAYOUT,
-        )
-        st.plotly_chart(fig_a, use_container_width=True)
-
-    elif name == "Charge hebdo DSL":
-        df_hebdo = df.copy()
-        df_hebdo["semaine"] = df_hebdo["date"].dt.to_period("W-SUN").dt.start_time
-        df_hebdo = (
-            df_hebdo.groupby("semaine")["dsl"].sum().reset_index()
-            .rename(columns={"semaine": "Semaine", "dsl": "DSL"})
-        )
-        fig2 = px.bar(
-            df_hebdo, x="Semaine", y="DSL",
-            labels={"Semaine": "", "DSL": "DSL total"},
-            color_discrete_sequence=["#56B4E9"],
-        )
-        fig2.update_layout(
-            title=dict(text="Charge hebdomadaire (DSL)", x=0.02, font=dict(size=13, color="#1a3a5c")),
-            xaxis_tickangle=-45,
-            **PLOTLY_LAYOUT,
-        )
-        st.plotly_chart(fig2, use_container_width=True)
-
-    elif name == "Vitesse max":
-        df_vmax = df.dropna(subset=["vitesse_max"])
-        fig4 = px.scatter(
-            df_vmax,
-            x="date", y="vitesse_max",
-            color="session_type",
-            color_discrete_map=SESSION_COLORS,
-            labels={"date": "", "vitesse_max": "Vmax (km/h)", "session_type": "Type"},
-        )
-        fig4.update_traces(marker_size=8)
-        fig4.update_layout(
-            title=dict(text="Vitesse max par séance", x=0.02, font=dict(size=13, color="#1a3a5c")),
-            legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"),
-            **PLOTLY_LAYOUT,
-        )
-        st.plotly_chart(fig4, use_container_width=True)
-
-
-active = [c for c in CHART_OPTIONS if c in charts_sel]
-for i in range(0, len(active), 2):
-    pair = active[i:i + 2]
+for i in range(0, len(active_fns), 2):
+    pair = active_fns[i:i + 2]
     cols = st.columns(len(pair))
-    for col, name in zip(cols, pair):
-        with col:
-            render_chart(name)
+    for col_st, (fn, arg) in zip(cols, pair):
+        with col_st:
+            fn(arg) if arg is not None else fn()
 
+# ── Sélecteur de métriques ────────────────────────────────────────────────────
 st.divider()
-st.multiselect(
-    "Graphiques affichés", CHART_OPTIONS,
-    default=CHART_OPTIONS, key="e_charts",
-    label_visibility="visible",
-)
+cs, ch, ce = st.columns([2, 2, 2], gap="small")
+with cs:
+    st.selectbox(
+        "Métrique — par séance", METRIQUES_LABELS,
+        index=METRIQUES_LABELS.index(met_session_lbl),
+        key="e_met_session",
+    )
+with ch:
+    st.selectbox(
+        "Métrique — par semaine", METRIQUES_LABELS,
+        index=METRIQUES_LABELS.index(met_hebdo_lbl),
+        key="e_met_hebdo",
+    )
+with ce:
+    st.multiselect(
+        "Graphiques supplémentaires", ["ACWR", "Vitesse max"],
+        default=["ACWR", "Vitesse max"], key="e_extra_charts",
+    )
