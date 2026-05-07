@@ -335,61 +335,19 @@ else:
 
 df_nos_touches = df_touche[df_touche["est_rec"] == 1]
 
-# ══════════════════════════════════════════════════════════════════════════════
-# SECTION A — GPS & CODAGE MATCH
-# ══════════════════════════════════════════════════════════════════════════════
-
-section("GPS & Codage match — équipe", "section-gps")
-
-GPS_AGG = {
-    "Distance totale (m)": ("total_distance", "sum", 0, " m"),
-    "Vitesse max (km/h)":  ("max_speed",      "max", 1, " km/h"),
-    "Sprints":             ("sprints",         "sum", 0, ""),
-    "HSR (m)":             ("hsr",             "sum", 0, " m"),
-    "Charge DSL":          ("dsl",             "sum", 1, ""),
-    "Accélérations":       ("accelerations",   "sum", 0, ""),
-    "Dist. métabolique":   ("metabolic_distance", "sum", 0, " m"),
-}
-
-TECH_AGG = {
-    "Passes":     ("passes_total",    "sum", 0, ""),
-    "Plaquages":  ("plaquages_total", "sum", 0, ""),
-    "Porteurs":   ("porteur_total",   "sum", 0, ""),
-    "Soutiens":   ("soutiens_total",  "sum", 0, ""),
-    "Contacts":   ("contacts_total",  "sum", 0, ""),
-    "Essais":     ("essais_total",    "sum", 0, ""),
-}
-
-
-def _agg_perf(df: pd.DataFrame, agg_map: dict) -> list[tuple[str, str]]:
-    result = []
-    for label, (col, func, dec, suf) in agg_map.items():
-        if col not in df.columns:
-            result.append((label, "—"))
-            continue
-        series = df[col].dropna()
-        if series.empty:
-            result.append((label, "—"))
-            continue
-        val = getattr(series, func)()
-        result.append((label, fmt(val, decimals=dec, suffix=suf)))
-    return result
-
-
-    # KPIs plaquages & passes
-    if not df_match_perf.empty:
-        pla_total = df_match_perf["plaquages_total"].dropna().sum()
-        pla_pos   = df_match_perf["plaquages_positif"].dropna().sum()
-        pla_pct   = f"{round(pla_pos / pla_total * 100)} %" if pla_total > 0 else "—"
-        pas_total = df_match_perf["passes_total"].dropna().sum()
-        st.markdown("##### Plaquages & Passes")
-        kpis_row([
-            ("Plaquages", fmt(pla_total)),
-            ("Réussite plaquages", pla_pct),
-            ("Passes", fmt(pas_total)),
-        ])
-
-st.divider()
+# ── KPIs plaquages & passes ───────────────────────────────────────────────────
+if not df_match_perf.empty:
+    pla_total = df_match_perf["plaquages_total"].dropna().sum()
+    pla_pos   = df_match_perf["plaquages_positif"].dropna().sum()
+    pla_pct   = f"{round(pla_pos / pla_total * 100)} %" if pla_total > 0 else "—"
+    pas_total = df_match_perf["passes_total"].dropna().sum()
+    section("Plaquages & Passes", "section-tech")
+    kpis_row([
+        ("Plaquages", fmt(pla_total)),
+        ("Réussite plaquages", pla_pct),
+        ("Passes", fmt(pas_total)),
+    ])
+    st.divider()
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SECTION B — MÊLÉES ÉQUIPE
