@@ -401,69 +401,28 @@ if not df_nos_touches.empty and not df_t_match.empty and "alignement" in df_t_ma
         title=dict(text="Touches par alignement", x=0.5, xanchor="center", font=dict(size=13, color="#1a3a5c")),
         legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"),
     )
-    st.plotly_chart(fig_align, use_container_width=True)
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# SECTION D — JEUX AU PIED
-# ══════════════════════════════════════════════════════════════════════════════
-
-
-if df_match_perf.empty:
-    st.info("Aucune donnée de jeu au pied pour ce match.")
-else:
-    jap_t   = int(df_match_perf["jap_total"].dropna().sum())
-    jap_pos = int(df_match_perf["jap_positif"].dropna().sum())
-    jap_neg = int(df_match_perf["jap_negatif"].dropna().sum())
-    jap_neu = int(df_match_perf["jap_neutre"].dropna().sum())
-    jap_tch = int(df_match_perf["jap_en_touche"].dropna().sum())
-    jap_pct_tch = f"{round(jap_tch / jap_t * 100)} %" if jap_t > 0 else "—"
-
-    kpis_row([
-        ("Jeux au pied", fmt(jap_t)),
-        ("En touche", fmt(jap_tch)),
-        ("% en touche", jap_pct_tch),
-    ])
-
-    if jap_t > 0:
-        col_l, col_r = st.columns(2)
-
-        with col_l:
-            # Camembert qualité (positif / négatif / neutre)
-            if jap_pos + jap_neg + jap_neu > 0:
+    col_touch, col_jap = st.columns(2, gap="medium")
+    with col_touch:
+        st.plotly_chart(fig_align, use_container_width=True)
+    with col_jap:
+        if not df_match_perf.empty:
+            jap_t   = int(df_match_perf["jap_total"].dropna().sum())
+            jap_pos = int(df_match_perf["jap_positif"].dropna().sum())
+            jap_neg = int(df_match_perf["jap_negatif"].dropna().sum())
+            jap_neu = int(df_match_perf["jap_neutre"].dropna().sum())
+            jap_tch = int(df_match_perf["jap_en_touche"].dropna().sum())
+            jap_pct_tch = f"{round(jap_tch / jap_t * 100)} %" if jap_t > 0 else "—"
+            if jap_t > 0 and jap_pos + jap_neg + jap_neu > 0:
                 df_qual = pd.DataFrame({
                     "Issue": ["Positif", "Négatif", "Neutre"],
                     "Nb":    [jap_pos,   jap_neg,   jap_neu],
                 })
-                fig_q = px.pie(
-                    df_qual, names="Issue", values="Nb",
-                    color="Issue",
-                    color_discrete_map={"Positif": "#009E73", "Négatif": "#E05C5C", "Neutre": "#aaaaaa"},
-                )
+                fig_q = px.pie(df_qual, names="Issue", values="Nb", color="Issue",
+                               color_discrete_map={"Positif": "#009E73", "Négatif": "#E05C5C", "Neutre": "#aaaaaa"})
                 fig_q.update_layout(
                     paper_bgcolor="#ffffff", font_color="#1a3a5c",
-                    title=dict(text="Qualité des jeux au pied", x=0.5, xanchor="center", font=dict(size=13, color="#1a3a5c")),
-                    margin=dict(t=40, b=10, l=10, r=10), height=300,
+                    title=dict(text="Jeux au pied", x=0.5, xanchor="center", font=dict(size=13, color="#1a3a5c")),
+                    margin=dict(t=40, b=10, l=10, r=10), height=350,
                     legend=dict(orientation="h", y=-0.1),
                 )
                 st.plotly_chart(fig_q, use_container_width=True)
-
-        with col_r:
-            # Bar zones d'origine
-            zones_data = {
-                "Propre 22m":  int(df_match_perf["jap_depuis_propre_22m"].dropna().sum()),
-                "Mi-terrain":  int(df_match_perf["jap_depuis_mi_terrain"].dropna().sum()),
-                "Camp adverse": int(df_match_perf["jap_depuis_camp_adv"].dropna().sum()),
-            }
-            df_zones = pd.DataFrame(zones_data.items(), columns=["Zone", "Nb"])
-            df_zones = df_zones[df_zones["Nb"] > 0]
-            if not df_zones.empty:
-                fig_z = px.bar(
-                    df_zones, x="Zone", y="Nb",
-                    color="Zone",
-                    color_discrete_sequence=["#56B4E9", "#E69F00", "#CC79A7"],
-                    labels={"Zone": "", "Nb": "Nb jeux au pied"},
-                )
-                fig_z.update_layout(**PLOTLY_LAYOUT, showlegend=False,
-                                    title=dict(text="Zones d'origine", x=0.5, xanchor="center", font=dict(size=13, color="#1a3a5c")))
-                st.plotly_chart(fig_z, use_container_width=True)
