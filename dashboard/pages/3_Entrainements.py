@@ -94,8 +94,6 @@ MOIS_FR = {
     5: "Mai", 6: "Juin", 7: "Juillet", 8: "Août",
     9: "Septembre", 10: "Octobre", 11: "Novembre", 12: "Décembre",
 }
-JOURS_FR_ABBR = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def _get_saison(d):
@@ -181,7 +179,7 @@ df_j["label"] = df_j.apply(
 joueur_labels = df_j["label"].tolist()
 label_to_nom = dict(zip(df_j["label"], df_j["nom"]))
 
-c_j, c_s, c_m, c_w, c_d = st.columns([2, 1.4, 1.6, 2, 1.6], gap="small")
+c_j, c_s, c_m, c_w = st.columns([2, 1.4, 1.6, 2], gap="small")
 
 with c_j:
     joueur_label = st.selectbox("Joueur", joueur_labels, key="e_joueur")
@@ -243,33 +241,10 @@ with c_w:
     )
 
 if sem_sel == "Toutes":
-    df_w = df_m
+    df = df_m
 else:
     ld = sem_to_lundi[sem_sel]
-    df_w = df_m[(df_m["lundi"] >= ld) & (df_m["lundi"] < ld + pd.Timedelta(days=7))]
-
-# Jour (cascade depuis semaine)
-if not df_w.empty:
-    jours_dates = sorted(df_w["date"].dt.date.unique())
-    jour_options = [
-        f"{JOURS_FR_ABBR[pd.Timestamp(d).weekday()]} {pd.Timestamp(d).strftime('%d/%m')}"
-        for d in jours_dates
-    ]
-    jour_to_date = dict(zip(jour_options, jours_dates))
-else:
-    jour_options, jour_to_date = [], {}
-
-with c_d:
-    jour_sel = st.selectbox(
-        "Jour", ["Tous"] + jour_options,
-        key=f"e_jour_{joueur}_{saison_sel}_{mois_sel}_{sem_sel}",
-    )
-
-if jour_sel == "Tous":
-    df = df_w
-else:
-    d_ = jour_to_date[jour_sel]
-    df = df_w[df_w["date"].dt.date == d_]
+    df = df_m[(df_m["lundi"] >= ld) & (df_m["lundi"] < ld + pd.Timedelta(days=7))]
 
 # ── KPIs ──────────────────────────────────────────────────────────────────────
 df_dist = df.dropna(subset=["distance"])
