@@ -334,141 +334,74 @@ else:
 
 df_nos_touches = df_touche[df_touche["est_rec"] == 1]
 
-# ── KPIs plaquages & passes ───────────────────────────────────────────────────
-if not df_match_perf.empty:
-    pla_total  = df_match_perf["plaquages_total"].dropna().sum()
-    pla_pos    = df_match_perf["plaquages_positif"].dropna().sum()
-    pla_pct    = f"{round(pla_pos / pla_total * 100)} %" if pla_total > 0 else "—"
-    pas_total  = df_match_perf["passes_total"].dropna().sum()
-    pas_pos    = df_match_perf["passes_positif"].dropna().sum()
-    pas_pct    = f"{round(pas_pos / pas_total * 100)} %" if pas_total > 0 else "—"
-    dist_total = df_match_perf["total_distance"].dropna().sum()
-    vmax       = df_match_perf["max_speed"].dropna().max()
-    _ka, _kb, _kc = st.columns(3)
-    _ka.metric("Plaquages", fmt(pla_total))
-    _kb.metric("Réussite plaquages", pla_pct)
-    _kc.metric("Distance totale", fmt(dist_total, suffix=" m"))
-    _kd, _ke, _kf = st.columns(3)
-    _kd.metric("Passes", fmt(pas_total))
-    _ke.metric("Réussite passes", pas_pct)
-    _kf.metric("Vitesse max", fmt(vmax, decimals=1, suffix=" km/h"))
-    st.divider()
-
-# ══════════════════════════════════════════════════════════════════════════════
-# SECTIONS B & C — MÊLÉES + TOUCHES CÔTE À CÔTE
-# ══════════════════════════════════════════════════════════════════════════════
-
-# Pré-calcul mêlées (hors colonnes Streamlit)
+# Helpers
 def _is_gagnee(val):
     return str(val).lower() in ["gagnée", "gagné", "gagne", "won", "win", "r", "1", "oui"] if pd.notna(val) else False
 
-def _taux_reussite(df: pd.DataFrame) -> str:
-    if "resultat" not in df.columns or df.empty:
-        return "—"
-    reussies = df["resultat"].str.lower().isin(["gagnée", "gagné", "gagne", "won", "win", "r", "1", "oui"]).sum()
-    total = len(df)
-    return f"{reussies}/{total} ({round(reussies/total*100)}%)" if total > 0 else "—"
+# Pré-calcul mêlées pie
+_row_match = df_matchs_ref[df_matchs_ref["match_id"] == mid_sel]
+mel_pie_data = None
+if not _row_match.empty:
+    _rm = _row_match.iloc[0]
+    mel_pos, mel_neg, mel_neu = _rm.get("melee_positif_rec") or 0, _rm.get("melee_negatif_rec") or 0, _rm.get("melee_neutre_rec") or 0
+    if mel_pos + mel_neg + mel_neu > 0:
+        mel_pie_data = pd.DataFrame({"Issue": ["Gagnée", "Perdue", "Neutre"], "Nb": [mel_pos, mel_neg, mel_neu]})
 
-if not df_melee.empty:
-    df_scrums_all = (
-        df_melee.groupby(["match_id", "date", "adversaire", "scrum_num"])
-        .agg(impact_moy=("impact", "mean"), scrum_load_moy=("scrum_load", "mean"))
-        .reset_index()
-    )
-    df_melee_par_match = (
-        df_scrums_all.groupby(["match_id", "date", "adversaire"])
-        .agg(nb_melees=("scrum_num", "count"), impact_moy=("impact_moy", "mean"), scrum_load_total=("scrum_load_moy", "sum"))
-        .reset_index().sort_values("date")
-    )
-    df_melee_par_match["label"] = df_melee_par_match["date"].dt.strftime("%d/%m") + " · " + df_melee_par_match["adversaire"].fillna("?")
-    df_melee_par_match = df_melee_par_match.merge(
-        df_matchs_ref[["match_id", "label"]].rename(columns={"label": "label_full"}), on="match_id", how="left",
-    )
-    _row_match = df_matchs_ref[df_matchs_ref["match_id"] == mid_sel]
-    mel_pie_data = None
-    if not _row_match.empty:
-        _rm = _row_match.iloc[0]
-        mel_pos, mel_neg, mel_neu = _rm.get("melee_positif_rec") or 0, _rm.get("melee_negatif_rec") or 0, _rm.get("melee_neutre_rec") or 0
-        if mel_pos + mel_neg + mel_neu > 0:
-            mel_pie_data = pd.DataFrame({"Issue": ["Gagnée", "Perdue", "Neutre"], "Nb": [mel_pos, mel_neg, mel_neu]})
+# ── Ligne 1 : KPIs (gauche) + Camembert mêlées (droite) ──────────────────────
+col_kpi, col_mel = st.columns([2, 1], gap="medium")
 
-col_melee, col_touche = st.columns([2, 1], gap="medium")
+with col_kpi:
+    if not df_match_perf.empty:
+        pla_total  = df_match_perf["plaquages_total"].dropna().sum()
+        pla_pos    = df_match_perf["plaquages_positif"].dropna().sum()
+        pla_pct    = f"{round(pla_pos / pla_total * 100)} %" if pla_total > 0 else "—"
+        pas_total  = df_match_perf["passes_total"].dropna().sum()
+        pas_pos    = df_match_perf["passes_positif"].dropna().sum()
+        pas_pct    = f"{round(pas_pos / pas_total * 100)} %" if pas_total > 0 else "—"
+        dist_total = df_match_perf["total_distance"].dropna().sum()
+        vmax       = df_match_perf["max_speed"].dropna().max()
+        _ka, _kb, _kc = st.columns(3)
+        _ka.metric("Plaquages", fmt(pla_total))
+        _kb.metric("Réussite plaquages", pla_pct)
+        _kc.metric("Distance totale", fmt(dist_total, suffix=" m"))
+        _kd, _ke, _kf = st.columns(3)
+        _kd.metric("Passes", fmt(pas_total))
+        _ke.metric("Réussite passes", pas_pct)
+        _kf.metric("Vitesse max", fmt(vmax, decimals=1, suffix=" km/h"))
 
-# ── Colonne Mêlées ────────────────────────────────────────────────────────────
-with col_melee:
-    if df_melee.empty:
-        st.info("Aucune donnée de mêlée disponible.")
+with col_mel:
+    if mel_pie_data is not None:
+        fig_pie = px.pie(
+            mel_pie_data, names="Issue", values="Nb", color="Issue",
+            color_discrete_map={"Gagnée": "#009E73", "Perdue": "#E05C5C", "Neutre": "#aaaaaa"},
+        )
+        fig_pie.update_layout(
+            paper_bgcolor="#ffffff", font_color="#1a3a5c",
+            title=dict(text="Mêlées", x=0.5, xanchor="center", font=dict(size=13, color="#1a3a5c")),
+            margin=dict(t=40, b=10, l=10, r=10), height=220,
+            legend=dict(orientation="h", y=-0.15),
+        )
+        st.plotly_chart(fig_pie, use_container_width=True)
     else:
-        if mel_pie_data is not None:
-            fig_pie = px.pie(
-                mel_pie_data, names="Issue", values="Nb", color="Issue",
-                color_discrete_map={"Gagnée": "#009E73", "Perdue": "#E05C5C", "Neutre": "#aaaaaa"},
-            )
-            fig_pie.update_layout(
-                paper_bgcolor="#ffffff", font_color="#1a3a5c",
-                title=dict(text="Mêlées", x=0.5, xanchor="center", font=dict(size=13, color="#1a3a5c")),
-                margin=dict(t=40, b=10, l=10, r=10), height=300,
-                legend=dict(orientation="h", y=-0.1),
-            )
-            st.plotly_chart(fig_pie, use_container_width=True)
-        else:
-            st.info("Données mêlées (codage vidéo) non disponibles.")
+        st.info("Données mêlées non disponibles.")
 
-        df_match_sc = df_scrums_all[df_scrums_all["match_id"] == mid_sel]
-        if not df_match_sc.empty:
-            row_m = df_melee_par_match[df_melee_par_match["match_id"] == mid_sel]
-            if not row_m.empty:
-                r = row_m.iloc[0]
-                kpis_row([
-                    ("Nb mêlées GPS", fmt(r["nb_melees"])),
-                    ("Impact moy.",   fmt(r["impact_moy"], decimals=1)),
-                    ("Charge totale", fmt(r["scrum_load_total"], decimals=0)),
-                ])
-            df_tl = (
-                df_melee[df_melee["match_id"] == mid_sel]
-                .groupby(["scrum_num", "mi_temps"])
-                .agg(impact_moy=("impact", "mean"), scrum_load_moy=("scrum_load", "mean"))
-                .reset_index().sort_values(["mi_temps", "scrum_num"])
-            )
-            df_tl["label"] = df_tl.apply(lambda r: f"MT{int(r['mi_temps'])} — M{int(r['scrum_num'])}", axis=1)
-            fig = go.Figure()
-            fig.add_trace(go.Bar(x=df_tl["label"], y=df_tl["impact_moy"],     name="Impact moy.",     marker_color="#56B4E9"))
-            fig.add_trace(go.Bar(x=df_tl["label"], y=df_tl["scrum_load_moy"], name="Scrum Load moy.", marker_color="#E69F00"))
-            fig.update_layout(barmode="group", xaxis_tickangle=-35,
-                              title=dict(text="Impact & Charge par mêlée", x=0.5, xanchor="center", font=dict(size=13, color="#1a3a5c")),
-                              legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"),
-                              xaxis_title="", yaxis_title="", **PLOTLY_LAYOUT)
-            st.plotly_chart(fig, use_container_width=True)
-
-# ── Colonne Touches ───────────────────────────────────────────────────────────
-with col_touche:
-    if df_nos_touches.empty:
-        st.info("Aucune donnée de touche disponible.")
-    else:
-        df_t_match = df_match_touche
-        if df_t_match.empty:
-            st.info("Aucune touche pour ce match.")
-        else:
-            if "zone" in df_t_match.columns and df_t_match["zone"].notna().any():
-                df_tz = df_t_match[df_t_match["zone"].notna()].copy()
-                df_tz["issue"] = df_tz["resultat"].apply(lambda v: "Gagnée" if _is_gagnee(v) else "Perdue")
-                df_zone = df_tz.groupby(["zone", "issue"]).size().reset_index(name="nb")
-                fig = px.bar(df_zone, x="zone", y="nb", color="issue",
-                             color_discrete_map={"Gagnée": "#009E73", "Perdue": "#E05C5C"},
-                             barmode="stack", labels={"zone": "", "nb": "Nb touches", "issue": ""})
-                fig.update_layout(**PLOTLY_LAYOUT,
-                                  title=dict(text="Touches par zone", x=0.5, xanchor="center", font=dict(size=13, color="#1a3a5c")),
-                                  legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"))
-                st.plotly_chart(fig, use_container_width=True)
-            if "alignement" in df_t_match.columns and df_t_match["alignement"].notna().any():
-                vc2 = df_t_match["alignement"].value_counts().reset_index()
-                vc2.columns = ["Alignement", "Nb"]
-                fig2 = px.pie(vc2, names="Alignement", values="Nb",
-                              color_discrete_sequence=["#CC79A7", "#56B4E9", "#E69F00", "#009E73", "#F0E442"])
-                fig2.update_layout(paper_bgcolor="#ffffff", font_color="#1a3a5c",
-                                   title=dict(text="Alignements", x=0.5, xanchor="center", font=dict(size=13, color="#1a3a5c")),
-                                   margin=dict(t=40, b=20), height=300)
-                st.plotly_chart(fig2, use_container_width=True)
+# ── Ligne 2 : Touches — alignements gagnés/perdus ────────────────────────────
+df_t_match = df_match_touche
+if not df_nos_touches.empty and not df_t_match.empty and "alignement" in df_t_match.columns and df_t_match["alignement"].notna().any():
+    df_ta = df_t_match[df_t_match["alignement"].notna()].copy()
+    df_ta["issue"] = df_ta["resultat"].apply(lambda v: "Gagnée" if _is_gagnee(v) else "Perdue")
+    df_align = df_ta.groupby(["alignement", "issue"]).size().reset_index(name="nb")
+    fig_align = px.bar(
+        df_align, x="alignement", y="nb", color="issue",
+        color_discrete_map={"Gagnée": "#009E73", "Perdue": "#E05C5C"},
+        barmode="stack", labels={"alignement": "", "nb": "Nb touches", "issue": ""},
+    )
+    fig_align.update_layout(
+        **PLOTLY_LAYOUT,
+        title=dict(text="Touches par alignement", x=0.5, xanchor="center", font=dict(size=13, color="#1a3a5c")),
+        legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"),
+    )
+    st.plotly_chart(fig_align, use_container_width=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
