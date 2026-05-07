@@ -392,7 +392,7 @@ if not df_melee.empty:
         if mel_pos + mel_neg + mel_neu > 0:
             mel_pie_data = pd.DataFrame({"Issue": ["Gagnée", "Perdue", "Neutre"], "Nb": [mel_pos, mel_neg, mel_neu]})
 
-col_melee, col_touche = st.columns(2, gap="medium")
+col_melee, col_touche = st.columns([2, 1], gap="medium")
 
 # ── Colonne Mêlées ────────────────────────────────────────────────────────────
 with col_melee:
