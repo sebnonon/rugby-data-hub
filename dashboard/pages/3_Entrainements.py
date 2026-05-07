@@ -167,6 +167,15 @@ def load_data():
         })
     df = pd.DataFrame(rows)
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    numeric_cols = [
+        "distance", "vitesse_max", "sprints", "dist_sprint",
+        "hsr", "hsr_per_min", "hml", "hml_per_min",
+        "dsl", "dist_metabolique", "accels", "decels",
+        "accel_max", "acute", "chronic", "acwr",
+    ]
+    for c in numeric_cols:
+        if c in df.columns:
+            df[c] = pd.to_numeric(df[c], errors="coerce")
     df = df.sort_values("date")
     return df
 
@@ -382,7 +391,7 @@ def chart_acwr() -> None:
 
 
 def chart_vmax() -> None:
-    df_v = df.dropna(subset=["vitesse_max"])
+    df_v = df.dropna(subset=["vitesse_max", "session_type"])
     fig = px.scatter(
         df_v, x="date", y="vitesse_max",
         color="session_type", color_discrete_map=SESSION_COLORS,
