@@ -344,10 +344,6 @@ def render_chart(col_lbl: str, chart_type: str) -> None:
 
     fig = go.Figure()
 
-    if is_acwr and not df_c.empty:
-        y_max = max(2.5, float(df_c[col].max()) + 0.2)
-        fig.add_hrect(y0=0.8, y1=1.3, fillcolor="#009E73", opacity=0.10, line_width=0)
-        fig.add_hrect(y0=1.5, y1=y_max, fillcolor="#D55E00", opacity=0.10, line_width=0)
 
     if chart_type == "Barres":
         for stype, color in SESSION_COLORS.items():
