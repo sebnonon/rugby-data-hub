@@ -379,11 +379,6 @@ def _agg_perf(df: pd.DataFrame, agg_map: dict) -> list[tuple[str, str]]:
 if df_match_perf.empty:
     st.info("Aucune donnée GPS pour ce match.")
 else:
-    st.markdown("##### GPS")
-    kpis_row(_agg_perf(df_match_perf, GPS_AGG))
-    st.markdown("##### Codage vidéo")
-    kpis_row(_agg_perf(df_match_perf, TECH_AGG))
-
     with st.expander("Détail par joueur"):
         cols_show = ["nom", "prenom", "poste", "minutes_jouees",
                      "total_distance", "max_speed", "sprints", "hsr", "dsl",
