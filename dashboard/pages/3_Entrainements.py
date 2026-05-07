@@ -282,87 +282,108 @@ k8.metric("HSR total", fmt(df["hsr"].sum(), decimals=0, suffix=" m"))
 k9.metric("Accélérations", fmt(df["accels"].sum(), decimals=0))
 k10.metric("Décélérations", fmt(df["decels"].sum(), decimals=0))
 
-# ── Graphiques 2×2 ────────────────────────────────────────────────────────────
-g1, g2 = st.columns(2)
+# ── Graphiques ────────────────────────────────────────────────────────────────
+CHART_OPTIONS = [
+    "Distance par séance",
+    "ACWR",
+    "Charge hebdo DSL",
+    "Vitesse max",
+]
+charts_sel = st.session_state.get("e_charts", CHART_OPTIONS)
 
-with g1:
-    fig = go.Figure()
-    for stype, color in SESSION_COLORS.items():
-        d = df_dist[df_dist["session_type"] == stype]
-        if d.empty:
-            continue
-        fig.add_trace(go.Bar(
-            x=d["date"].dt.strftime("%d/%m"),
-            y=d["distance"],
-            name=stype,
-            marker_color=color,
-        ))
-    fig.update_layout(
-        title=dict(text="Distance par séance", x=0.02, font=dict(size=13, color="#1a3a5c")),
-        barmode="stack",
-        xaxis_tickangle=-45,
-        legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"),
-        xaxis_title="", yaxis_title="Distance (m)",
-        **PLOTLY_LAYOUT,
-    )
-    st.plotly_chart(fig, use_container_width=True)
 
-with g2:
-    df_acwr = df.dropna(subset=["acwr"]).sort_values("date")
-    fig_a = go.Figure()
-    if not df_acwr.empty:
-        fig_a.add_hrect(y0=0.8, y1=1.3, fillcolor="#009E73", opacity=0.10, line_width=0)
-        fig_a.add_hrect(y0=1.5, y1=max(2.5, float(df_acwr["acwr"].max()) + 0.2),
-                        fillcolor="#D55E00", opacity=0.10, line_width=0)
-        fig_a.add_trace(go.Scatter(
-            x=df_acwr["date"], y=df_acwr["acwr"],
-            mode="lines+markers",
-            line=dict(color="#0a7ab0", width=2),
-            marker=dict(size=6, color="#0a7ab0"),
-            name="ACWR",
-        ))
-    fig_a.update_layout(
-        title=dict(text="ACWR au cours du temps", x=0.02, font=dict(size=13, color="#1a3a5c")),
-        xaxis_title="", yaxis_title="ACWR",
-        showlegend=False,
-        **PLOTLY_LAYOUT,
-    )
-    st.plotly_chart(fig_a, use_container_width=True)
+def render_chart(name: str) -> None:
+    if name == "Distance par séance":
+        fig = go.Figure()
+        for stype, color in SESSION_COLORS.items():
+            d = df_dist[df_dist["session_type"] == stype]
+            if d.empty:
+                continue
+            fig.add_trace(go.Bar(
+                x=d["date"].dt.strftime("%d/%m"),
+                y=d["distance"],
+                name=stype,
+                marker_color=color,
+            ))
+        fig.update_layout(
+            title=dict(text="Distance par séance", x=0.02, font=dict(size=13, color="#1a3a5c")),
+            barmode="stack",
+            xaxis_tickangle=-45,
+            legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"),
+            xaxis_title="", yaxis_title="Distance (m)",
+            **PLOTLY_LAYOUT,
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
-g3, g4 = st.columns(2)
+    elif name == "ACWR":
+        df_acwr = df.dropna(subset=["acwr"]).sort_values("date")
+        fig_a = go.Figure()
+        if not df_acwr.empty:
+            fig_a.add_hrect(y0=0.8, y1=1.3, fillcolor="#009E73", opacity=0.10, line_width=0)
+            fig_a.add_hrect(y0=1.5, y1=max(2.5, float(df_acwr["acwr"].max()) + 0.2),
+                            fillcolor="#D55E00", opacity=0.10, line_width=0)
+            fig_a.add_trace(go.Scatter(
+                x=df_acwr["date"], y=df_acwr["acwr"],
+                mode="lines+markers",
+                line=dict(color="#0a7ab0", width=2),
+                marker=dict(size=6, color="#0a7ab0"),
+            ))
+        fig_a.update_layout(
+            title=dict(text="ACWR au cours du temps", x=0.02, font=dict(size=13, color="#1a3a5c")),
+            xaxis_title="", yaxis_title="ACWR",
+            showlegend=False,
+            **PLOTLY_LAYOUT,
+        )
+        st.plotly_chart(fig_a, use_container_width=True)
 
-with g3:
-    df_hebdo = df.copy()
-    df_hebdo["semaine"] = df_hebdo["date"].dt.to_period("W-SUN").dt.start_time
-    df_hebdo = (
-        df_hebdo.groupby("semaine")["dsl"].sum().reset_index()
-        .rename(columns={"semaine": "Semaine", "dsl": "DSL"})
-    )
-    fig2 = px.bar(
-        df_hebdo, x="Semaine", y="DSL",
-        labels={"Semaine": "", "DSL": "DSL total"},
-        color_discrete_sequence=["#56B4E9"],
-    )
-    fig2.update_layout(
-        title=dict(text="Charge hebdomadaire (DSL)", x=0.02, font=dict(size=13, color="#1a3a5c")),
-        xaxis_tickangle=-45,
-        **PLOTLY_LAYOUT,
-    )
-    st.plotly_chart(fig2, use_container_width=True)
+    elif name == "Charge hebdo DSL":
+        df_hebdo = df.copy()
+        df_hebdo["semaine"] = df_hebdo["date"].dt.to_period("W-SUN").dt.start_time
+        df_hebdo = (
+            df_hebdo.groupby("semaine")["dsl"].sum().reset_index()
+            .rename(columns={"semaine": "Semaine", "dsl": "DSL"})
+        )
+        fig2 = px.bar(
+            df_hebdo, x="Semaine", y="DSL",
+            labels={"Semaine": "", "DSL": "DSL total"},
+            color_discrete_sequence=["#56B4E9"],
+        )
+        fig2.update_layout(
+            title=dict(text="Charge hebdomadaire (DSL)", x=0.02, font=dict(size=13, color="#1a3a5c")),
+            xaxis_tickangle=-45,
+            **PLOTLY_LAYOUT,
+        )
+        st.plotly_chart(fig2, use_container_width=True)
 
-with g4:
-    df_vmax = df.dropna(subset=["vitesse_max"])
-    fig4 = px.scatter(
-        df_vmax,
-        x="date", y="vitesse_max",
-        color="session_type",
-        color_discrete_map=SESSION_COLORS,
-        labels={"date": "", "vitesse_max": "Vmax (km/h)", "session_type": "Type"},
-    )
-    fig4.update_traces(marker_size=8)
-    fig4.update_layout(
-        title=dict(text="Vitesse max par séance", x=0.02, font=dict(size=13, color="#1a3a5c")),
-        legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"),
-        **PLOTLY_LAYOUT,
-    )
-    st.plotly_chart(fig4, use_container_width=True)
+    elif name == "Vitesse max":
+        df_vmax = df.dropna(subset=["vitesse_max"])
+        fig4 = px.scatter(
+            df_vmax,
+            x="date", y="vitesse_max",
+            color="session_type",
+            color_discrete_map=SESSION_COLORS,
+            labels={"date": "", "vitesse_max": "Vmax (km/h)", "session_type": "Type"},
+        )
+        fig4.update_traces(marker_size=8)
+        fig4.update_layout(
+            title=dict(text="Vitesse max par séance", x=0.02, font=dict(size=13, color="#1a3a5c")),
+            legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"),
+            **PLOTLY_LAYOUT,
+        )
+        st.plotly_chart(fig4, use_container_width=True)
+
+
+active = [c for c in CHART_OPTIONS if c in charts_sel]
+for i in range(0, len(active), 2):
+    pair = active[i:i + 2]
+    cols = st.columns(len(pair))
+    for col, name in zip(cols, pair):
+        with col:
+            render_chart(name)
+
+st.divider()
+st.multiselect(
+    "Graphiques affichés", CHART_OPTIONS,
+    default=CHART_OPTIONS, key="e_charts",
+    label_visibility="visible",
+)
