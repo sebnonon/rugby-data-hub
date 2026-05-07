@@ -70,7 +70,7 @@ st.markdown("""
     [data-testid="stSelectbox"] label { color: #2a6080; }
     hr { border-color: #c0d8ea; }
     .stCaption { color: #5a8aaa; }
-    .block-container { padding-top: 0.5rem !important; }
+    .block-container { padding-top: 3.5rem !important; }
 </style>
 """, unsafe_allow_html=True)
 
