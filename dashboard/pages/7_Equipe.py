@@ -76,6 +76,16 @@ st.markdown("""
     [data-testid="stDataFrame"] { border: 1px solid #c0d8ea; border-radius: 8px; }
     [data-testid="stExpander"] { background-color: #ffffff; border: 1px solid #c0d8ea; border-radius: 8px; }
     .block-container { padding-top: 3.5rem !important; }
+
+    /* Cartes graphiques */
+    [data-testid="stPlotlyChart"] {
+        border: 1.5px solid #c0d8ea;
+        border-radius: 12px;
+        padding: 6px 4px 4px 4px;
+        background-color: #ffffff;
+        box-shadow: 0 2px 8px rgba(10, 90, 140, 0.08);
+        margin-bottom: 12px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -348,7 +358,7 @@ if not _row_match.empty:
         mel_pie_data = pd.DataFrame({"Issue": ["Gagnée", "Perdue", "Neutre"], "Nb": [mel_pos, mel_neg, mel_neu]})
 
 # ── Ligne 1 : KPIs (gauche) + Camembert mêlées (droite) ──────────────────────
-col_kpi, col_mel = st.columns([2, 1], gap="medium")
+col_kpi, col_mel = st.columns([2, 1], gap="large")
 
 with col_kpi:
     if not df_match_perf.empty:
@@ -401,7 +411,7 @@ if not df_nos_touches.empty and not df_t_match.empty and "alignement" in df_t_ma
         title=dict(text="Touches par alignement", x=0.5, xanchor="center", font=dict(size=13, color="#1a3a5c")),
         legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"),
     )
-    col_touch, col_jap = st.columns(2, gap="medium")
+    col_touch, col_jap = st.columns(2, gap="large")
     with col_touch:
         st.plotly_chart(fig_align, use_container_width=True)
     with col_jap:
