@@ -356,12 +356,12 @@ if not df_match_perf.empty:
 
 # Pré-calcul mêlées (hors colonnes Streamlit)
 def _is_gagnee(val):
-    return str(val).lower() in ["gagné", "gagne", "won", "win", "r", "1", "oui"] if pd.notna(val) else False
+    return str(val).lower() in ["gagnée", "gagné", "gagne", "won", "win", "r", "1", "oui"] if pd.notna(val) else False
 
 def _taux_reussite(df: pd.DataFrame) -> str:
     if "resultat" not in df.columns or df.empty:
         return "—"
-    reussies = df["resultat"].str.lower().isin(["gagné", "gagne", "won", "win", "r", "1", "oui"]).sum()
+    reussies = df["resultat"].str.lower().isin(["gagnée", "gagné", "gagne", "won", "win", "r", "1", "oui"]).sum()
     total = len(df)
     return f"{reussies}/{total} ({round(reussies/total*100)}%)" if total > 0 else "—"
 
