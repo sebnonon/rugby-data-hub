@@ -78,7 +78,7 @@ PLOTLY_LAYOUT = dict(
     paper_bgcolor="#ffffff", plot_bgcolor="#ffffff",
     font_color="#1a3a5c",
     xaxis=dict(gridcolor="#c0d8ea"), yaxis=dict(gridcolor="#c0d8ea"),
-    height=280, margin=dict(t=20, b=30, l=40, r=10),
+    height=380, margin=dict(t=20, b=30, l=40, r=10),
 )
 
 # Palette Okabe-Ito
