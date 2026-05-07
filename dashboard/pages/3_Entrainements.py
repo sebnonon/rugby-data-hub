@@ -351,18 +351,18 @@ def render_chart(col_lbl: str, chart_type: str) -> None:
 
     if chart_type == "Barres":
         for stype, color in SESSION_COLORS.items():
-            d = df_c[df_c["session_type"] == stype]
+            d = df_c[df_c["session_type"] == stype].sort_values("date")
             if d.empty:
                 continue
             fig.add_trace(go.Bar(
-                x=d["date"].dt.strftime("%d/%m"),
+                x=d["date"],
                 y=d[col],
                 name=stype,
                 marker_color=color,
             ))
         fig.update_layout(
             barmode="stack",
-            xaxis_tickangle=-45,
+            xaxis=dict(type="date", tickformat="%d/%m", tickangle=-45, gridcolor="#c0d8ea"),
             legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"),
         )
     else:  # Courbe
