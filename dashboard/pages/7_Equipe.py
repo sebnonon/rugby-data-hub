@@ -469,10 +469,6 @@ with col_touche:
                                    title=dict(text="Alignements", x=0.5, xanchor="center", font=dict(size=13, color="#1a3a5c")),
                                    margin=dict(t=40, b=20), height=300)
                 st.plotly_chart(fig2, use_container_width=True)
-            if "resultat" in df_t_match.columns and df_t_match["resultat"].notna().any():
-                with st.expander("Détail des touches"):
-                    cols_disp = [c for c in ["resultat", "alignement", "zone", "sortie"] if c in df_t_match.columns]
-                st.dataframe(df_t_match[cols_disp], use_container_width=True, hide_index=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
