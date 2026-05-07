@@ -319,7 +319,6 @@ if matchs_labels:
     with c_journee:
         st.metric("Journée", _journee_str)
 
-st.divider()
 
 # ── Sélection du match courant ────────────────────────────────────────────────
 if matchs_labels:
@@ -343,7 +342,6 @@ if not df_match_perf.empty:
     pas_total = df_match_perf["passes_total"].dropna().sum()
     pas_pos   = df_match_perf["passes_positif"].dropna().sum()
     pas_pct   = f"{round(pas_pos / pas_total * 100)} %" if pas_total > 0 else "—"
-    section("Plaquages & Passes", "section-tech")
     _ka, _kb = st.columns(2)
     _ka.metric("Plaquages", fmt(pla_total))
     _kb.metric("Réussite plaquages", pla_pct)
@@ -394,7 +392,6 @@ col_melee, col_touche = st.columns(2, gap="medium")
 
 # ── Colonne Mêlées ────────────────────────────────────────────────────────────
 with col_melee:
-    section("Mêlées — équipe", "section-melee")
     if df_melee.empty:
         st.info("Aucune donnée de mêlée disponible.")
     else:
@@ -439,7 +436,6 @@ with col_melee:
 
 # ── Colonne Touches ───────────────────────────────────────────────────────────
 with col_touche:
-    section("Touches — équipe", "section-touche")
     if df_nos_touches.empty:
         st.info("Aucune donnée de touche disponible.")
     else:
@@ -473,13 +469,11 @@ with col_touche:
                     cols_disp = [c for c in ["resultat", "alignement", "zone", "sortie"] if c in df_t_match.columns]
                 st.dataframe(df_t_match[cols_disp], use_container_width=True, hide_index=True)
 
-st.divider()
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SECTION D — JEUX AU PIED
 # ══════════════════════════════════════════════════════════════════════════════
 
-section("Jeux au pied", "section-tech")
 
 if df_match_perf.empty:
     st.info("Aucune donnée de jeu au pied pour ce match.")
