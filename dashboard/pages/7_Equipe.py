@@ -1,7 +1,7 @@
 """
 Dashboard Performance équipe — Rugby Data Hub
 Vue équipe par match : GPS & codage match agrégés, mêlées, touches.
-Toggle Match / Moyenne pour basculer entre un match précis et la moyenne saison.
+Vue par match : GPS & codage match agrégés, mêlées, touches.
 """
 
 import sys
@@ -65,12 +65,17 @@ st.markdown("""
     .section-melee  { color: #009E73; border-left: 3px solid #009E73; background: #009E7312; }
     .section-touche { color: #CC79A7; border-left: 3px solid #CC79A7; background: #CC79A712; }
 
+    @media (max-width: 1280px) { .block-container { zoom: 0.85; } }
+    @media (min-width: 1281px) and (max-width: 1600px) { .block-container { zoom: 0.95; } }
+    @media (min-width: 1601px) and (max-width: 1920px) { .block-container { zoom: 1.0; } }
+    @media (min-width: 1921px) { .block-container { zoom: 1.1; } }
+
     [data-testid="stSelectbox"] label { color: #2a6080; }
     hr { border-color: #c0d8ea; }
     .stCaption { color: #5a8aaa; }
     [data-testid="stDataFrame"] { border: 1px solid #c0d8ea; border-radius: 8px; }
     [data-testid="stExpander"] { background-color: #ffffff; border: 1px solid #c0d8ea; border-radius: 8px; }
-    .block-container { padding-top: 1.5rem !important; }
+    .block-container { padding-top: 3.5rem !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -261,35 +266,20 @@ df_matchs_ref["label"] = df_matchs_ref.apply(make_match_label, axis=1)
 matchs_labels = df_matchs_ref.sort_values("date", ascending=False)["label"].tolist()
 label_to_mid  = dict(zip(df_matchs_ref["label"], df_matchs_ref["match_id"]))
 
-col_logo, col_titre, col_match, col_vue = st.columns([1, 3, 4, 2], gap="small")
+st.markdown(
+    '<p style="font-weight:700; font-size:1.1rem; color:#071626; margin:0; padding:0.25rem 0 0.5rem 0; text-align:center;">Performance équipe</p>',
+    unsafe_allow_html=True,
+)
 
-with col_logo:
-    logo_path = Path(__file__).parent.parent / "logo.jpg"
-    if logo_path.exists():
-        st.markdown('<div style="margin-top: 20px"></div>', unsafe_allow_html=True)
-        st.image(str(logo_path), width=80)
-
-with col_titre:
-    st.markdown('<div style="margin-top: 22px"></div>', unsafe_allow_html=True)
-    st.markdown("## Performance équipe")
-
-with col_match:
+c_match, c_score, c_journee = st.columns([4, 2, 2], gap="small")
+with c_match:
     match_sel = st.selectbox(
         "Match", matchs_labels if matchs_labels else ["—"],
         key="eq_match", disabled=not matchs_labels,
     )
 
-with col_vue:
-    st.markdown('<div style="height:27px"></div>', unsafe_allow_html=True)
-    vue = st.radio(
-        "Vue", ["🏉 Match", "📊 Moyenne"],
-        horizontal=True, label_visibility="collapsed", key="eq_vue",
-    )
-
-# Encadrés info match
-if matchs_labels and vue == "🏉 Match":
+if matchs_labels:
     _row_m = df_matchs_ref[df_matchs_ref["label"] == match_sel].iloc[0]
-    _spacer, _c1, _c2, _c3 = st.columns([4, 2, 2, 2])
     sr, sa = _row_m.get("score_rec"), _row_m.get("score_adv")
     try:
         _score = f"{int(sr)} — {int(sa)}" if (pd.notna(sr) and pd.notna(sa)) else "—"
@@ -300,10 +290,10 @@ if matchs_labels and vue == "🏉 Match":
         _journee_str = f"J{int(_journee)}" if pd.notna(_journee) else "—"
     except (TypeError, ValueError):
         _journee_str = "—"
-    _n_joueurs = len(df_perf[df_perf["match_id"] == label_to_mid.get(match_sel, -1)])
-    _c1.metric("Score", _score)
-    _c2.metric("Journée", _journee_str)
-    _c3.metric("Joueurs GPS", str(_n_joueurs) if _n_joueurs > 0 else "—")
+    with c_score:
+        st.metric("Score", _score)
+    with c_journee:
+        st.metric("Journée", _journee_str)
 
 st.divider()
 
@@ -314,6 +304,7 @@ if matchs_labels:
     df_match_melee = df_melee[df_melee["match_id"] == mid_sel]
     df_match_touche = df_touche[(df_touche["match_id"] == mid_sel) & (df_touche["est_rec"] == 1)]
 else:
+    mid_sel = -1
     df_match_perf = df_perf.iloc[0:0]
     df_match_melee = df_melee.iloc[0:0]
     df_match_touche = df_touche.iloc[0:0]
@@ -361,122 +352,40 @@ def _agg_perf(df: pd.DataFrame, agg_map: dict) -> list[tuple[str, str]]:
     return result
 
 
-if vue == "🏉 Match":
-    if df_match_perf.empty:
-        st.info("Aucune donnée GPS pour ce match.")
-    else:
-        st.markdown("##### GPS")
-        kpis_row(_agg_perf(df_match_perf, GPS_AGG))
-        st.markdown("##### Codage vidéo")
-        kpis_row(_agg_perf(df_match_perf, TECH_AGG))
-
-        # Tableau des joueurs
-        with st.expander("Détail par joueur"):
-            cols_show = ["nom", "prenom", "poste", "minutes_jouees",
-                         "total_distance", "max_speed", "sprints", "hsr", "dsl",
-                         "passes_total", "plaquages_total", "porteur_total", "essais_total"]
-            cols_show = [c for c in cols_show if c in df_match_perf.columns]
-            df_disp = df_match_perf[cols_show].copy()
-            df_disp["Joueur"] = df_disp.apply(
-                lambda r: f"{r['prenom']} {r['nom']}" if "prenom" in r and pd.notna(r.get("prenom")) else r["nom"],
-                axis=1,
-            )
-            rename_map = {
-                "Joueur": "Joueur", "poste": "Poste", "minutes_jouees": "Min",
-                "total_distance": "Distance (m)", "max_speed": "Vmax (km/h)",
-                "sprints": "Sprints", "hsr": "HSR (m)", "dsl": "DSL",
-                "passes_total": "Passes", "plaquages_total": "Plaquages",
-                "porteur_total": "Porteurs", "essais_total": "Essais",
-            }
-            cols_final = [c for c in ["Joueur", "poste", "minutes_jouees",
-                                       "total_distance", "max_speed", "sprints", "hsr", "dsl",
-                                       "passes_total", "plaquages_total", "porteur_total", "essais_total"]
-                          if c in df_disp.columns or c == "Joueur"]
-            df_disp = df_disp[["Joueur"] + [c for c in cols_final if c != "Joueur" and c in df_disp.columns]]
-            df_disp = df_disp.rename(columns=rename_map).sort_values(
-                "Min" if "Min" in df_disp.columns else "Joueur", ascending=False
-            )
-            st.dataframe(df_disp, use_container_width=True, hide_index=True)
-
+if df_match_perf.empty:
+    st.info("Aucune donnée GPS pour ce match.")
 else:
-    # Moyenne — agrégation par match puis moyenne des matchs
-    df_par_match = (
-        df_perf.groupby("match_id")
-        .agg(
-            total_distance=("total_distance", "sum"),
-            max_speed=("max_speed", "max"),
-            sprints=("sprints", "sum"),
-            hsr=("hsr", "sum"),
-            dsl=("dsl", "sum"),
-            accelerations=("accelerations", "sum"),
-            metabolic_distance=("metabolic_distance", "sum"),
-            passes_total=("passes_total", "sum"),
-            plaquages_total=("plaquages_total", "sum"),
-            porteur_total=("porteur_total", "sum"),
-            soutiens_total=("soutiens_total", "sum"),
-            contacts_total=("contacts_total", "sum"),
-            essais_total=("essais_total", "sum"),
-        )
-        .reset_index()
-    )
-    df_par_match = df_par_match.merge(
-        df_matchs_ref[["match_id", "date", "label"]], on="match_id", how="left"
-    ).sort_values("date")
-
-    moyennes_gps = {
-        "Distance moy. (m)":  ("total_distance",    1, " m"),
-        "Vmax équipe (km/h)":  ("max_speed",         1, " km/h"),
-        "Sprints moy.":        ("sprints",            0, ""),
-        "HSR moy. (m)":        ("hsr",               0, " m"),
-        "DSL moy.":            ("dsl",               1, ""),
-        "Accélérations moy.":  ("accelerations",     0, ""),
-    }
-    moyennes_tech = {
-        "Passes moy.":    ("passes_total",    0, ""),
-        "Plaquages moy.": ("plaquages_total", 0, ""),
-        "Porteurs moy.":  ("porteur_total",   0, ""),
-        "Essais moy.":    ("essais_total",    0, ""),
-    }
-
     st.markdown("##### GPS")
-    kpis_row([
-        (lbl, fmt(df_par_match[col].mean(), decimals=dec, suffix=suf))
-        for lbl, (col, dec, suf) in moyennes_gps.items()
-        if col in df_par_match.columns
-    ])
+    kpis_row(_agg_perf(df_match_perf, GPS_AGG))
     st.markdown("##### Codage vidéo")
-    kpis_row([
-        (lbl, fmt(df_par_match[col].mean(), decimals=dec, suffix=suf))
-        for lbl, (col, dec, suf) in moyennes_tech.items()
-        if col in df_par_match.columns
-    ])
+    kpis_row(_agg_perf(df_match_perf, TECH_AGG))
 
-    st.divider()
-
-    # Bar chart distance totale par match
-    if not df_par_match.empty and "total_distance" in df_par_match.columns:
-        col_l, col_r = st.columns(2)
-        with col_l:
-            fig = px.bar(
-                df_par_match, x="label", y="total_distance",
-                labels={"label": "", "total_distance": "Distance totale (m)"},
-                color_discrete_sequence=["#56B4E9"],
-                text="total_distance",
-            )
-            fig.update_traces(texttemplate="%{text:,.0f}", textposition="outside")
-            fig.update_layout(xaxis_tickangle=-35, **PLOTLY_LAYOUT)
-            st.plotly_chart(fig, use_container_width=True)
-        with col_r:
-            if "essais_total" in df_par_match.columns:
-                fig2 = px.bar(
-                    df_par_match, x="label", y="essais_total",
-                    labels={"label": "", "essais_total": "Essais"},
-                    color_discrete_sequence=["#E69F00"],
-                    text="essais_total",
-                )
-                fig2.update_traces(texttemplate="%{text:.0f}", textposition="outside")
-                fig2.update_layout(xaxis_tickangle=-35, **PLOTLY_LAYOUT)
-                st.plotly_chart(fig2, use_container_width=True)
+    with st.expander("Détail par joueur"):
+        cols_show = ["nom", "prenom", "poste", "minutes_jouees",
+                     "total_distance", "max_speed", "sprints", "hsr", "dsl",
+                     "passes_total", "plaquages_total", "porteur_total", "essais_total"]
+        cols_show = [c for c in cols_show if c in df_match_perf.columns]
+        df_disp = df_match_perf[cols_show].copy()
+        df_disp["Joueur"] = df_disp.apply(
+            lambda r: f"{r['prenom']} {r['nom']}" if "prenom" in r and pd.notna(r.get("prenom")) else r["nom"],
+            axis=1,
+        )
+        rename_map = {
+            "Joueur": "Joueur", "poste": "Poste", "minutes_jouees": "Min",
+            "total_distance": "Distance (m)", "max_speed": "Vmax (km/h)",
+            "sprints": "Sprints", "hsr": "HSR (m)", "dsl": "DSL",
+            "passes_total": "Passes", "plaquages_total": "Plaquages",
+            "porteur_total": "Porteurs", "essais_total": "Essais",
+        }
+        cols_final = [c for c in ["Joueur", "poste", "minutes_jouees",
+                                   "total_distance", "max_speed", "sprints", "hsr", "dsl",
+                                   "passes_total", "plaquages_total", "porteur_total", "essais_total"]
+                      if c in df_disp.columns or c == "Joueur"]
+        df_disp = df_disp[["Joueur"] + [c for c in cols_final if c != "Joueur" and c in df_disp.columns]]
+        df_disp = df_disp.rename(columns=rename_map).sort_values(
+            "Min" if "Min" in df_disp.columns else "Joueur", ascending=False
+        )
+        st.dataframe(df_disp, use_container_width=True, hide_index=True)
 
 st.divider()
 
@@ -513,66 +422,39 @@ else:
         on="match_id", how="left",
     )
 
-    if vue == "🏉 Match":
-        df_match_sc = df_scrums_all[df_scrums_all["match_id"] == mid_sel]
-        if df_match_sc.empty:
-            st.info("Aucune donnée de mêlée pour ce match.")
-        else:
-            row_m = df_melee_par_match[df_melee_par_match["match_id"] == mid_sel]
-            if not row_m.empty:
-                r = row_m.iloc[0]
-                kpis_row([
-                    ("Nb mêlées", fmt(r["nb_melees"])),
-                    ("Impact moy.", fmt(r["impact_moy"], decimals=1)),
-                    ("Charge totale", fmt(r["scrum_load_total"], decimals=0)),
-                ])
-
-            # Timeline des mêlées du match
-            df_tl = (
-                df_melee[df_melee["match_id"] == mid_sel]
-                .groupby(["scrum_num", "mi_temps"])
-                .agg(impact_moy=("impact", "mean"), scrum_load_moy=("scrum_load", "mean"))
-                .reset_index()
-                .sort_values(["mi_temps", "scrum_num"])
-            )
-            df_tl["label"] = df_tl.apply(
-                lambda r: f"MT{int(r['mi_temps'])} — M{int(r['scrum_num'])}", axis=1
-            )
-            fig = go.Figure()
-            fig.add_trace(go.Bar(x=df_tl["label"], y=df_tl["impact_moy"],    name="Impact moy.",     marker_color="#56B4E9"))
-            fig.add_trace(go.Bar(x=df_tl["label"], y=df_tl["scrum_load_moy"], name="Scrum Load moy.", marker_color="#E69F00"))
-            fig.update_layout(
-                barmode="group", xaxis_tickangle=-35,
-                legend=dict(orientation="h", y=1.12, font_color="#1a3a5c"),
-                xaxis_title="", yaxis_title="",
-                **PLOTLY_LAYOUT,
-            )
-            st.plotly_chart(fig, use_container_width=True)
-
+    df_match_sc = df_scrums_all[df_scrums_all["match_id"] == mid_sel]
+    if df_match_sc.empty:
+        st.info("Aucune donnée de mêlée pour ce match.")
     else:
-        kpis_row([
-            ("Mêlées totales",     fmt(df_melee_par_match["nb_melees"].sum())),
-            ("Impact moy.",        fmt(df_melee_par_match["impact_moy"].mean(), decimals=1)),
-            ("Charge moy./match",  fmt(df_melee_par_match["scrum_load_total"].mean(), decimals=0)),
-        ])
+        row_m = df_melee_par_match[df_melee_par_match["match_id"] == mid_sel]
+        if not row_m.empty:
+            r = row_m.iloc[0]
+            kpis_row([
+                ("Nb mêlées", fmt(r["nb_melees"])),
+                ("Impact moy.", fmt(r["impact_moy"], decimals=1)),
+                ("Charge totale", fmt(r["scrum_load_total"], decimals=0)),
+            ])
 
-        col_l, col_r = st.columns(2)
-        with col_l:
-            fig = px.bar(
-                df_melee_par_match, x="label", y="nb_melees",
-                labels={"label": "", "nb_melees": "Nb mêlées"},
-                color_discrete_sequence=["#56B4E9"],
-            )
-            fig.update_layout(xaxis_tickangle=-35, **PLOTLY_LAYOUT)
-            st.plotly_chart(fig, use_container_width=True)
-        with col_r:
-            fig2 = px.bar(
-                df_melee_par_match, x="label", y="impact_moy",
-                labels={"label": "", "impact_moy": "Impact moy."},
-                color_discrete_sequence=["#E69F00"],
-            )
-            fig2.update_layout(xaxis_tickangle=-35, **PLOTLY_LAYOUT)
-            st.plotly_chart(fig2, use_container_width=True)
+        df_tl = (
+            df_melee[df_melee["match_id"] == mid_sel]
+            .groupby(["scrum_num", "mi_temps"])
+            .agg(impact_moy=("impact", "mean"), scrum_load_moy=("scrum_load", "mean"))
+            .reset_index()
+            .sort_values(["mi_temps", "scrum_num"])
+        )
+        df_tl["label"] = df_tl.apply(
+            lambda r: f"MT{int(r['mi_temps'])} — M{int(r['scrum_num'])}", axis=1
+        )
+        fig = go.Figure()
+        fig.add_trace(go.Bar(x=df_tl["label"], y=df_tl["impact_moy"],    name="Impact moy.",     marker_color="#56B4E9"))
+        fig.add_trace(go.Bar(x=df_tl["label"], y=df_tl["scrum_load_moy"], name="Scrum Load moy.", marker_color="#E69F00"))
+        fig.update_layout(
+            barmode="group", xaxis_tickangle=-35,
+            legend=dict(orientation="h", y=1.12, font_color="#1a3a5c"),
+            xaxis_title="", yaxis_title="",
+            **PLOTLY_LAYOUT,
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
 st.divider()
 
@@ -594,75 +476,36 @@ else:
             return "—"
         return f"{reussies}/{total} ({round(reussies/total*100)}%)"
 
-    if vue == "🏉 Match":
-        df_t_match = df_match_touche
-        if df_t_match.empty:
-            st.info("Aucune touche pour ce match.")
-        else:
-            kpis_row([
-                ("Touches jouées", str(len(df_t_match))),
-                ("Résultat",       _taux_reussite(df_t_match)),
-            ])
-
-            col_l, col_r = st.columns(2)
-            with col_l:
-                if "zone" in df_t_match.columns and df_t_match["zone"].notna().any():
-                    vc = df_t_match["zone"].value_counts().reset_index()
-                    vc.columns = ["Zone", "Nb"]
-                    fig = px.bar(vc, x="Zone", y="Nb", color="Zone",
-                                 color_discrete_sequence=["#CC79A7", "#56B4E9", "#E69F00", "#009E73"],
-                                 labels={"Zone": "", "Nb": "Nb touches"})
-                    fig.update_layout(**PLOTLY_LAYOUT, showlegend=False)
-                    st.plotly_chart(fig, use_container_width=True)
-            with col_r:
-                if "alignement" in df_t_match.columns and df_t_match["alignement"].notna().any():
-                    vc2 = df_t_match["alignement"].value_counts().reset_index()
-                    vc2.columns = ["Alignement", "Nb"]
-                    fig2 = px.pie(vc2, names="Alignement", values="Nb",
-                                  color_discrete_sequence=["#CC79A7", "#56B4E9", "#E69F00", "#009E73", "#F0E442"])
-                    fig2.update_layout(paper_bgcolor="#ffffff", font_color="#1a3a5c",
-                                       margin=dict(t=20, b=20), height=300)
-                    st.plotly_chart(fig2, use_container_width=True)
-
-            if "resultat" in df_t_match.columns and df_t_match["resultat"].notna().any():
-                with st.expander("Détail des touches"):
-                    cols_disp = [c for c in ["resultat", "alignement", "zone", "sortie"] if c in df_t_match.columns]
-                    st.dataframe(df_t_match[cols_disp], use_container_width=True, hide_index=True)
-
+    df_t_match = df_match_touche
+    if df_t_match.empty:
+        st.info("Aucune touche pour ce match.")
     else:
-        # Agrégation par match
-        df_touche_pm = (
-            df_nos_touches.groupby("match_id")
-            .agg(nb_touches=("match_id", "count"))
-            .reset_index()
-        )
-        df_touche_pm = df_touche_pm.merge(
-            df_matchs_ref[["match_id", "label"]], on="match_id", how="left"
-        ).sort_values("match_id")
-
         kpis_row([
-            ("Touches moy./match",  fmt(df_touche_pm["nb_touches"].mean(), decimals=1)),
-            ("Touches totales",     fmt(df_touche_pm["nb_touches"].sum())),
-            ("Résultat global",     _taux_reussite(df_nos_touches)),
+            ("Touches jouées", str(len(df_t_match))),
+            ("Résultat",       _taux_reussite(df_t_match)),
         ])
 
         col_l, col_r = st.columns(2)
         with col_l:
-            if not df_touche_pm.empty:
-                fig = px.bar(
-                    df_touche_pm, x="label", y="nb_touches",
-                    labels={"label": "", "nb_touches": "Nb touches"},
-                    color_discrete_sequence=["#CC79A7"],
-                )
-                fig.update_layout(xaxis_tickangle=-35, **PLOTLY_LAYOUT)
+            if "zone" in df_t_match.columns and df_t_match["zone"].notna().any():
+                vc = df_t_match["zone"].value_counts().reset_index()
+                vc.columns = ["Zone", "Nb"]
+                fig = px.bar(vc, x="Zone", y="Nb", color="Zone",
+                             color_discrete_sequence=["#CC79A7", "#56B4E9", "#E69F00", "#009E73"],
+                             labels={"Zone": "", "Nb": "Nb touches"})
+                fig.update_layout(**PLOTLY_LAYOUT, showlegend=False)
                 st.plotly_chart(fig, use_container_width=True)
-
         with col_r:
-            if "alignement" in df_nos_touches.columns and df_nos_touches["alignement"].notna().any():
-                vc = df_nos_touches["alignement"].value_counts().reset_index()
-                vc.columns = ["Alignement", "Nb"]
-                fig2 = px.pie(vc, names="Alignement", values="Nb",
+            if "alignement" in df_t_match.columns and df_t_match["alignement"].notna().any():
+                vc2 = df_t_match["alignement"].value_counts().reset_index()
+                vc2.columns = ["Alignement", "Nb"]
+                fig2 = px.pie(vc2, names="Alignement", values="Nb",
                               color_discrete_sequence=["#CC79A7", "#56B4E9", "#E69F00", "#009E73", "#F0E442"])
                 fig2.update_layout(paper_bgcolor="#ffffff", font_color="#1a3a5c",
                                    margin=dict(t=20, b=20), height=300)
                 st.plotly_chart(fig2, use_container_width=True)
+
+        if "resultat" in df_t_match.columns and df_t_match["resultat"].notna().any():
+            with st.expander("Détail des touches"):
+                cols_disp = [c for c in ["resultat", "alignement", "zone", "sortie"] if c in df_t_match.columns]
+                st.dataframe(df_t_match[cols_disp], use_container_width=True, hide_index=True)
