@@ -330,20 +330,14 @@ def render_chart(col_lbl: str, chart_type: str) -> None:
             legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"),
         )
     else:  # Courbe
-        for stype, color in SESSION_COLORS.items():
-            d = df_c[df_c["session_type"] == stype].sort_values("date")
-            if d.empty:
-                continue
-            fig.add_trace(go.Scatter(
-                x=d["date"], y=d[col],
-                mode="lines+markers",
-                name=stype,
-                line=dict(color=color, width=2),
-                marker=dict(size=6, color=color),
-            ))
-        fig.update_layout(
-            legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"),
-        )
+        df_sorted = df_c.sort_values("date")
+        fig.add_trace(go.Scatter(
+            x=df_sorted["date"], y=df_sorted[col],
+            mode="lines+markers",
+            line=dict(color="#0a7ab0", width=2),
+            marker=dict(size=6, color="#0a7ab0"),
+            showlegend=False,
+        ))
 
     fig.update_layout(
         title=dict(text=col_lbl, x=0.02, font=dict(size=13, color="#1a3a5c")),
