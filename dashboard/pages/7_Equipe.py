@@ -399,11 +399,11 @@ with col_melee:
             fig_pie = px.pie(
                 mel_pie_data, names="Issue", values="Nb", color="Issue",
                 color_discrete_map={"Gagnée": "#009E73", "Perdue": "#E05C5C", "Neutre": "#aaaaaa"},
-                title="Mêlées",
             )
             fig_pie.update_layout(
                 paper_bgcolor="#ffffff", font_color="#1a3a5c",
-                margin=dict(t=20, b=10, l=10, r=10), height=300,
+                title=dict(text="Mêlées", x=0.5, xanchor="center", font=dict(size=13, color="#1a3a5c")),
+                margin=dict(t=40, b=10, l=10, r=10), height=300,
                 legend=dict(orientation="h", y=-0.1),
             )
             st.plotly_chart(fig_pie, use_container_width=True)
@@ -431,7 +431,8 @@ with col_melee:
             fig.add_trace(go.Bar(x=df_tl["label"], y=df_tl["impact_moy"],     name="Impact moy.",     marker_color="#56B4E9"))
             fig.add_trace(go.Bar(x=df_tl["label"], y=df_tl["scrum_load_moy"], name="Scrum Load moy.", marker_color="#E69F00"))
             fig.update_layout(barmode="group", xaxis_tickangle=-35,
-                              legend=dict(orientation="h", y=1.12, font_color="#1a3a5c"),
+                              title=dict(text="Impact & Charge par mêlée", x=0.5, xanchor="center", font=dict(size=13, color="#1a3a5c")),
+                              legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"),
                               xaxis_title="", yaxis_title="", **PLOTLY_LAYOUT)
             st.plotly_chart(fig, use_container_width=True)
 
@@ -455,7 +456,9 @@ with col_touche:
                 fig = px.bar(df_zone, x="zone", y="nb", color="issue",
                              color_discrete_map={"Gagnée": "#009E73", "Perdue": "#E05C5C"},
                              barmode="stack", labels={"zone": "", "nb": "Nb touches", "issue": ""})
-                fig.update_layout(**PLOTLY_LAYOUT, legend=dict(orientation="h", y=1.12, font_color="#1a3a5c"))
+                fig.update_layout(**PLOTLY_LAYOUT,
+                                  title=dict(text="Touches par zone", x=0.5, xanchor="center", font=dict(size=13, color="#1a3a5c")),
+                                  legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"))
                 st.plotly_chart(fig, use_container_width=True)
             if "alignement" in df_t_match.columns and df_t_match["alignement"].notna().any():
                 vc2 = df_t_match["alignement"].value_counts().reset_index()
@@ -463,7 +466,8 @@ with col_touche:
                 fig2 = px.pie(vc2, names="Alignement", values="Nb",
                               color_discrete_sequence=["#CC79A7", "#56B4E9", "#E69F00", "#009E73", "#F0E442"])
                 fig2.update_layout(paper_bgcolor="#ffffff", font_color="#1a3a5c",
-                                   margin=dict(t=20, b=20), height=300)
+                                   title=dict(text="Alignements", x=0.5, xanchor="center", font=dict(size=13, color="#1a3a5c")),
+                                   margin=dict(t=40, b=20), height=300)
                 st.plotly_chart(fig2, use_container_width=True)
             if "resultat" in df_t_match.columns and df_t_match["resultat"].notna().any():
                 with st.expander("Détail des touches"):
@@ -506,10 +510,10 @@ else:
                     df_qual, names="Issue", values="Nb",
                     color="Issue",
                     color_discrete_map={"Positif": "#009E73", "Négatif": "#E05C5C", "Neutre": "#aaaaaa"},
-                    title="Qualité des jeux au pied",
                 )
                 fig_q.update_layout(
                     paper_bgcolor="#ffffff", font_color="#1a3a5c",
+                    title=dict(text="Qualité des jeux au pied", x=0.5, xanchor="center", font=dict(size=13, color="#1a3a5c")),
                     margin=dict(t=40, b=10, l=10, r=10), height=300,
                     legend=dict(orientation="h", y=-0.1),
                 )
@@ -530,7 +534,7 @@ else:
                     color="Zone",
                     color_discrete_sequence=["#56B4E9", "#E69F00", "#CC79A7"],
                     labels={"Zone": "", "Nb": "Nb jeux au pied"},
-                    title="Zones d'origine",
                 )
-                fig_z.update_layout(**PLOTLY_LAYOUT, showlegend=False)
+                fig_z.update_layout(**PLOTLY_LAYOUT, showlegend=False,
+                                    title=dict(text="Zones d'origine", x=0.5, xanchor="center", font=dict(size=13, color="#1a3a5c")))
                 st.plotly_chart(fig_z, use_container_width=True)
