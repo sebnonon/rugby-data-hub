@@ -376,36 +376,6 @@ def _agg_perf(df: pd.DataFrame, agg_map: dict) -> list[tuple[str, str]]:
     return result
 
 
-if df_match_perf.empty:
-    st.info("Aucune donnée GPS pour ce match.")
-else:
-    with st.expander("Détail par joueur"):
-        cols_show = ["nom", "prenom", "poste", "minutes_jouees",
-                     "total_distance", "max_speed", "sprints", "hsr", "dsl",
-                     "passes_total", "plaquages_total", "porteur_total", "essais_total"]
-        cols_show = [c for c in cols_show if c in df_match_perf.columns]
-        df_disp = df_match_perf[cols_show].copy()
-        df_disp["Joueur"] = df_disp.apply(
-            lambda r: f"{r['prenom']} {r['nom']}" if "prenom" in r and pd.notna(r.get("prenom")) else r["nom"],
-            axis=1,
-        )
-        rename_map = {
-            "Joueur": "Joueur", "poste": "Poste", "minutes_jouees": "Min",
-            "total_distance": "Distance (m)", "max_speed": "Vmax (km/h)",
-            "sprints": "Sprints", "hsr": "HSR (m)", "dsl": "DSL",
-            "passes_total": "Passes", "plaquages_total": "Plaquages",
-            "porteur_total": "Porteurs", "essais_total": "Essais",
-        }
-        cols_final = [c for c in ["Joueur", "poste", "minutes_jouees",
-                                   "total_distance", "max_speed", "sprints", "hsr", "dsl",
-                                   "passes_total", "plaquages_total", "porteur_total", "essais_total"]
-                      if c in df_disp.columns or c == "Joueur"]
-        df_disp = df_disp[["Joueur"] + [c for c in cols_final if c != "Joueur" and c in df_disp.columns]]
-        df_disp = df_disp.rename(columns=rename_map).sort_values(
-            "Min" if "Min" in df_disp.columns else "Joueur", ascending=False
-        )
-        st.dataframe(df_disp, use_container_width=True, hide_index=True)
-
     # KPIs plaquages & passes
     if not df_match_perf.empty:
         pla_total = df_match_perf["plaquages_total"].dropna().sum()
