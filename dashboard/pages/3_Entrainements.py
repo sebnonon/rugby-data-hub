@@ -265,41 +265,9 @@ else:
     ld = sem_to_lundi[sem_sel]
     df = df_m[(df_m["lundi"] >= ld) & (df_m["lundi"] < ld + pd.Timedelta(days=7))]
 
-# ── KPIs ──────────────────────────────────────────────────────────────────────
-df_dist = df.dropna(subset=["distance"])
-nb_sessions = len(df_dist)
-
 if df.empty:
     st.info("Aucune donnée d'entraînement pour cette sélection.")
     st.stop()
-
-# Ligne 1 : Charge GPS
-section("Charge GPS", "section-gps")
-k1, k2, k3, k4, k5 = st.columns(5)
-k1.metric("Séances", f"{nb_sessions}")
-k2.metric(
-    "Distance moy.",
-    fmt(df_dist["distance"].mean(), decimals=0, suffix=" m") if nb_sessions else "—",
-)
-k3.metric(
-    "Distance totale",
-    f"{df_dist['distance'].sum()/1000:.1f} km" if nb_sessions else "—",
-)
-k4.metric(
-    "Charge totale DSL",
-    fmt(df_dist["dsl"].sum(), decimals=0) if nb_sessions else "—",
-)
-acwr_mean = df["acwr"].dropna().mean() if "acwr" in df.columns else None
-k5.metric("ACWR moyen", fmt(acwr_mean, decimals=2))
-
-# Ligne 2 : Intensité
-section("Intensité", "section-int")
-k6, k7, k8, k9, k10 = st.columns(5)
-k6.metric("Vitesse max", fmt(df["vitesse_max"].max(), decimals=1, suffix=" km/h"))
-k7.metric("Sprints", fmt(df["sprints"].sum(), decimals=0))
-k8.metric("HSR total", fmt(df["hsr"].sum(), decimals=0, suffix=" m"))
-k9.metric("Accélérations", fmt(df["accels"].sum(), decimals=0))
-k10.metric("Décélérations", fmt(df["decels"].sum(), decimals=0))
 
 # ── Métriques disponibles ─────────────────────────────────────────────────────
 METRIQUES = {
