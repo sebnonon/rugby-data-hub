@@ -76,6 +76,16 @@ st.markdown("""
     [data-testid="stRadio"] { position: relative; z-index: 10; }
     [data-testid="stSlider"] { zoom: reset; }
 
+    /* Cartes graphiques */
+    [data-testid="stPlotlyChart"] {
+        border: 1.5px solid #c0d8ea;
+        border-radius: 12px;
+        padding: 6px 4px 4px 4px;
+        background-color: #ffffff;
+        box-shadow: 0 2px 8px rgba(10, 90, 140, 0.08);
+        margin-bottom: 12px;
+    }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -100,7 +110,7 @@ def load_data():
             "plaquages_total, plaquages_positif, "
             "porteur_total, soutiens_total, contacts_total, essais_total, "
             "minutes_jouees, "
-            "joueur(nom, prenom, poste_principal), match(date, adversaire, adversaire_nom_complet, score_rec, score_adv, journee, session_title)"
+            "joueur(nom, prenom, poste_principal), match(date, adversaire, adversaire_nom_complet, score_rec, score_adv, journee, session_title, equipe_dom)"
         )
         .execute()
     )
@@ -120,6 +130,7 @@ def load_data():
             "score_adv":         r["match"]["score_adv"] if r["match"] else None,
             "journee":           r["match"]["journee"] if r["match"] else None,
             "match_titre":       r["match"]["session_title"] if r["match"] else None,
+            "equipe_dom":        r["match"]["equipe_dom"] if r["match"] else None,
             "distance":          r["total_distance"],
             "vitesse_max":       r["max_speed"],
             "sprints":           r["sprints"],
@@ -154,7 +165,7 @@ def load_match_cmp():
         "passes_total, passes_positif, plaquages_total, plaquages_positif, "
         "porteur_total, soutiens_total, contacts_total, grattages_total, "
         "essais_total, minutes_jouees, "
-        "joueur(nom, prenom, poste_principal), match(date, adversaire, adversaire_nom_complet, score_rec, score_adv, journee, session_title)"
+        "joueur(nom, prenom, poste_principal), match(date, adversaire, adversaire_nom_complet, score_rec, score_adv, journee, session_title, equipe_dom)"
     )
     res = c.table("perf_match").select(cols).execute()
     rows = []
@@ -170,6 +181,7 @@ def load_match_cmp():
         row["score_adv"]         = r["match"]["score_adv"] if r["match"] else None
         row["journee"]           = r["match"]["journee"] if r["match"] else None
         row["match_titre"]       = r["match"]["session_title"] if r["match"] else None
+        row["equipe_dom"]        = r["match"]["equipe_dom"] if r["match"] else None
         rows.append(row)
     df = pd.DataFrame(rows)
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
@@ -577,6 +589,8 @@ with tab_joueur:
                 _score = f"{int(sr)} — {int(sa)}" if (pd.notna(sr) and pd.notna(sa)) else "—"
             except (TypeError, ValueError):
                 _score = "—"
+            _dom = _row_info.get("equipe_dom") or ""
+            _lieu_icon = "🏠" if "REC" in str(_dom).upper() else "✈️"
             _minutes = _row_info.get("minutes_jouees")
             try:
                 _min_str = f"{int(_minutes)} min" if pd.notna(_minutes) else "—"
@@ -587,7 +601,7 @@ with tab_joueur:
             _journee_str = _score = _min_str = "—"
 
         c_j.metric("Journée", _journee_str)
-        c_s.metric("Score", _score)
+        c_s.metric(f"Score {_lieu_icon}", _score)
         c_t.metric("Temps de jeu", _min_str)
         c_p.metric("Poste", _poste)
 
@@ -711,7 +725,7 @@ with tab_compare:
             return f"{adv} · {row['date'].strftime('%d/%m/%y')}"
 
         matchs_ref_c = (
-            df_src_c[["match_id", "date", "adversaire", "adversaire_complet", "journee", "score_rec", "score_adv"]]
+            df_src_c[["match_id", "date", "adversaire", "adversaire_complet", "journee", "score_rec", "score_adv", "equipe_dom"]]
             .drop_duplicates("match_id").dropna(subset=["date"]).sort_values("date", ascending=False)
         )
         matchs_ref_c["label"] = matchs_ref_c.apply(_match_label_c, axis=1)
@@ -735,10 +749,13 @@ with tab_compare:
                 _score_c = f"{int(sr)} — {int(sa)}" if (pd.notna(sr) and pd.notna(sa)) else "—"
             except (TypeError, ValueError):
                 _score_c = "—"
+            _dom_c = _mref.get("equipe_dom") or ""
+            _lieu_icon_c = "🏠" if "REC" in str(_dom_c).upper() else "✈️"
         else:
             _journee_c = _score_c = "—"
+            _lieu_icon_c = ""
         c_jc.metric("Journée", _journee_c)
-        c_sc.metric("Score", _score_c)
+        c_sc.metric(f"Score {_lieu_icon_c}".strip(), _score_c)
 
         df_cmp = df_src_c[df_src_c["match_id"] == mid_c] if mid_c else df_src_c
         key_joueurs = f"cp_joueurs_{mid_c}"

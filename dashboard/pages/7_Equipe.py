@@ -114,6 +114,7 @@ def load_perf_match():
         "jap_en_touche, jap_camp_adverse, "
         "joueur(nom, prenom, poste_principal), "
         "match(date, adversaire, adversaire_nom_complet, score_rec, score_adv, journee, session_title, "
+        "equipe_dom, "
         "melee_total_rec, melee_positif_rec, melee_negatif_rec, melee_neutre_rec, "
         "possession_rec, possession_adv)"
     )
@@ -170,6 +171,7 @@ def load_perf_match():
             "melee_total_rec":       r["match"]["melee_total_rec"]   if r["match"] else None,
             "possession_rec":        r["match"]["possession_rec"]    if r["match"] else None,
             "possession_adv":        r["match"]["possession_adv"]    if r["match"] else None,
+            "equipe_dom":            r["match"]["equipe_dom"]        if r["match"] else None,
         })
     df = pd.DataFrame(rows)
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
@@ -290,7 +292,7 @@ df_matchs_ref = (
     df_perf[[
         "match_id", "date", "adversaire", "adversaire_complet", "score_rec", "score_adv", "journee",
         "melee_positif_rec", "melee_negatif_rec", "melee_neutre_rec", "melee_total_rec",
-        "possession_rec", "possession_adv",
+        "possession_rec", "possession_adv", "equipe_dom",
     ]]
     .drop_duplicates(subset=["match_id"])
     .dropna(subset=["date"])
@@ -324,8 +326,10 @@ if matchs_labels:
         _journee_str = f"J{int(_journee)}" if pd.notna(_journee) else "—"
     except (TypeError, ValueError):
         _journee_str = "—"
+    _dom = _row_m.get("equipe_dom") or ""
+    _lieu_icon = "🏠" if "REC" in str(_dom).upper() else "✈️"
     with c_score:
-        st.metric("Score", _score)
+        st.metric(f"Score {_lieu_icon}", _score)
     with c_journee:
         st.metric("Journée", _journee_str)
 
@@ -407,9 +411,9 @@ if not df_nos_touches.empty and not df_t_match.empty and "alignement" in df_t_ma
         barmode="stack", labels={"alignement": "", "nb": "Nb touches", "issue": ""},
     )
     fig_align.update_layout(
-        **PLOTLY_LAYOUT,
+        **{**PLOTLY_LAYOUT, "height": 250, "margin": dict(t=50, b=40, l=40, r=10)},
         title=dict(text="Touches par alignement", x=0.5, xanchor="center", font=dict(size=13, color="#1a3a5c")),
-        legend=dict(orientation="h", y=1.18, font_color="#1a3a5c"),
+        legend=dict(orientation="h", y=-0.25, x=0.5, xanchor="center", font_color="#1a3a5c"),
     )
     col_touch, col_jap = st.columns(2, gap="large")
     with col_touch:
@@ -432,7 +436,7 @@ if not df_nos_touches.empty and not df_t_match.empty and "alignement" in df_t_ma
                 fig_q.update_layout(
                     paper_bgcolor="#ffffff", font_color="#1a3a5c",
                     title=dict(text="Jeux au pied", x=0.5, xanchor="center", font=dict(size=13, color="#1a3a5c")),
-                    margin=dict(t=40, b=10, l=10, r=10), height=350,
+                    margin=dict(t=40, b=10, l=10, r=10), height=250,
                     legend=dict(orientation="h", y=-0.1),
                 )
                 st.plotly_chart(fig_q, use_container_width=True)

@@ -71,6 +71,16 @@ st.markdown("""
     hr { border-color: #c0d8ea; }
     .stCaption { color: #5a8aaa; }
     .block-container { padding-top: 3.5rem !important; }
+
+    /* Cartes graphiques */
+    [data-testid="stPlotlyChart"] {
+        border: 1.5px solid #c0d8ea;
+        border-radius: 12px;
+        padding: 6px 4px 4px 4px;
+        background-color: #ffffff;
+        box-shadow: 0 2px 8px rgba(10, 90, 140, 0.08);
+        margin-bottom: 12px;
+    }
 </style>
 """, unsafe_allow_html=True)
 

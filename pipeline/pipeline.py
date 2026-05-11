@@ -619,7 +619,8 @@ if not df_matchs_stats.empty:
     df_matchs_enrichi = df_matchs_enrichi.merge(df_matchs_stats, on="match_id", how="left")
     cols_stats = [c for c in df_matchs_enrichi.columns
                   if c not in ("match_id", "session_title", "date",
-                               "equipe_dom", "equipe_ext", "adversaire", "competition")]
+                               "equipe_dom", "equipe_ext", "adversaire",
+                               "adversaire_nom_complet", "competition")]
     df_matchs_enrichi[cols_stats] = df_matchs_enrichi[cols_stats].fillna(0).astype(int)
     df_matchs_enrichi.to_sql("match", conn, if_exists="replace", index=False)
     print(f"  → {len(cols_stats)} colonnes de métriques ajoutées à match")

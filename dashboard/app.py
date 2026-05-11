@@ -6,6 +6,12 @@ import streamlit as st
 
 st.set_page_config(page_title="Rugby Data Hub", page_icon="🏉", layout="wide")
 
+st.warning(
+    "⚠️ Les données affichées sont synthétiques (générées à des fins de démonstration) "
+    "et ne sont pas représentatives de performances réelles.",
+    icon="⚠️",
+)
+
 pg = st.navigation([
     st.Page("pages/1_Performances.py",  title="Perf. joueur",       icon="📊"),
     st.Page("pages/3_Entrainements.py", title="Suivi entraînement",  icon="🏋️"),

@@ -52,14 +52,19 @@ TABLE_PK = {
 }
 
 # Colonnes PK auto-générées par SERIAL — à exclure de l'INSERT
-# (joueur_id et match_id sont des FK dans les tables de faits, on les garde)
+# joueur_id et match_id sont des PK de référence : on les insère explicitement
+# pour que les FK des tables de faits restent cohérentes.
 TABLE_SERIAL_PK = {
-    "joueur":            "joueur_id",
     "perf_entrainement": "perf_entr_id",
     "perf_match":        "perf_match_id",
     "collision":         "collision_id",
     "melee":             "melee_id",
     "touche":            "touche_id",
+}
+
+# Colonnes présentes en SQLite mais absentes du schéma Supabase
+TABLE_DROP_COLS = {
+    "perf_entrainement": ["player_name"],
 }
 
 
@@ -149,6 +154,21 @@ def main() -> None:
         try:
             df = pd.read_sql(f"SELECT * FROM {table}", conn)
             df = drop_serial_pk(df, table)
+            # Supprime les colonnes absentes du schéma Supabase
+            for col in TABLE_DROP_COLS.get(table, []):
+                if col in df.columns:
+                    df = df.drop(columns=[col])
+            # Déduplique sur les contraintes uniques
+            if table == "perf_match" and not df.empty:
+                before = len(df)
+                df = df.drop_duplicates(subset=["joueur_id", "match_id"], keep="last")
+                if len(df) < before:
+                    print(f"  ℹ️  {before - len(df)} doublon(s) supprimé(s) dans perf_match")
+            if table == "melee" and not df.empty:
+                before = len(df)
+                df = df.drop_duplicates(subset=["joueur_id", "match_id", "mi_temps", "scrum_num"], keep="last")
+                if len(df) < before:
+                    print(f"  ℹ️  {before - len(df)} doublon(s) supprimé(s) dans melee")
             records = clean_records(df)
             insert_table(client, table, records)
         except Exception as e:
