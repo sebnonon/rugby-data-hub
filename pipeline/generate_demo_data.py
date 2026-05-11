@@ -25,13 +25,17 @@ sys.path.insert(0, str(Path(__file__).parent))
 from parsers.utils import ABBREV_TO_FULL_NAME
 
 load_dotenv(ROOT / ".env.demo")
-
 SUPABASE_URL = os.getenv("SUPABASE_URL_DEMO")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY_DEMO")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    print("❌ Credentials manquants dans .env.demo")
-    print("   Attendu : SUPABASE_URL_DEMO et SUPABASE_SERVICE_ROLE_KEY_DEMO")
+    # Fallback sur .env principal
+    load_dotenv(ROOT / ".env")
+    SUPABASE_URL = os.getenv("SUPABASE_URL")
+    SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+if not SUPABASE_URL or not SUPABASE_KEY:
+    print("❌ Credentials manquants (.env.demo ou .env)")
     sys.exit(1)
 
 client = create_client(SUPABASE_URL, SUPABASE_KEY)
